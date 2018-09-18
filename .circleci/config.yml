@@ -1,0 +1,48 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/node:8.11
+    
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+  dig:
+    docker:
+      - image: circleci/node:8.11
+
+    working_directory: ~/electron
+
+    steps:
+      - run: git clone https://github.com/electron/electron.git .
+
+      - run: mkdir -p artifacts
+
+      - run: rm -rf node_modules && npm install
+
+      - run: echo "#!/usr/bin/env node\nglobal.x=1" > node_modules/typescript/bin/tsc
+
+      - run: git checkout $DIG_SPOT
+
+      - run: git merge-base master HEAD > .dig-old
+
+      - run: node node_modules/.bin/electron-docs-linter docs --outfile=electron-api.json --version=0.0.0-archaeologist.0
+      
+      - run: node node_modules/.bin/electron-typescript-definitions docs --in=electron-api.json --out=artifacts/electron.new.d.ts
+
+      - run: git checkout $(cat .dig-old)
+
+      - run: rm -rf node_modules && npm install
+
+      - run: echo "#!/usr/bin/env node\nglobal.x=1" > node_modules/typescript/bin/tsc
+
+      - run: node node_modules/.bin/electron-docs-linter docs --outfile=electron-api.json --version=0.0.0-archaeologist.0
+      
+      - run: node node_modules/.bin/electron-typescript-definitions docs --in=electron-api.json --out=artifacts/electron.old.d.ts
+
+      - run: mv .dig-old artifacts
+
+      - store_artifacts:
+          path: artifacts
+      

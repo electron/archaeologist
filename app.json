@@ -1,0 +1,27 @@
+{
+  "name": "electron-archaeologist",
+  "description": "a bot that does electron.d.ts comparisons",
+  "scripts": {
+  },
+  "env": {
+    "APP_ID": {
+      "required": true
+    },
+    "PRIVATE_KEY": {
+      "required": true
+    },
+    "CIRCLE_TOKEN": {
+      "required": true
+    }
+  },
+  "formation": {
+  },
+  "addons": [
+
+  ],
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ]
+}
