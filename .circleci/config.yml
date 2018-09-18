@@ -19,17 +19,19 @@ jobs:
 
       - run: mkdir -p artifacts
 
-      - run: rm -rf node_modules && npm install
-
-      - run: echo "#!/usr/bin/env node\nglobal.x=1" > node_modules/typescript/bin/tsc
-
       - run: git checkout $DIG_SPOT
 
       - run: git merge-base master HEAD > .dig-old
 
+      - run: rm -rf node_modules && npm install
+
+      - run: echo "#!/usr/bin/env node\nglobal.x=1" > node_modules/typescript/bin/tsc
+
       - run: node node_modules/.bin/electron-docs-linter docs --outfile=electron-api.json --version=0.0.0-archaeologist.0
       
       - run: node node_modules/.bin/electron-typescript-definitions docs --in=electron-api.json --out=artifacts/electron.new.d.ts
+
+      - run: git checkout .
 
       - run: git checkout $(cat .dig-old)
 
