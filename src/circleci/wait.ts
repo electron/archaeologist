@@ -74,7 +74,7 @@ export async function waitForCircle(ctx: IContext, buildNumber: number) {
     },
     (d) => {
       if (d.lifecycle === 'finished') {
-        if (d.status === 'success') {
+        if (d.outcome === 'success') {
           return CheckStatus.BUILD_PASSED;
         } else {
           return CheckStatus.BUILD_FAILED;
