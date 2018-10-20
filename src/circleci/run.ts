@@ -3,12 +3,13 @@ import fetch from 'node-fetch';
 import { CIRCLE_TOKEN, REPO_SLUG } from './constants';
 import { IContext } from '../types';
 
-export async function runCircleBuild (ctx: IContext, digSpot: string) {
+export async function runCircleBuild (ctx: IContext, digSpot: string, baseBranch: string) {
   ctx.logger.info(`Triggering CircleCI to run dig on for target: ${digSpot}`);
   const buildRequest: Record<string, Record<string, string>> = {
     build_parameters: {
       DIG_SPOT: digSpot,
-      CIRCLE_JOB: 'dig'
+      CIRCLE_JOB: 'dig',
+      BASE_BRANCH: baseBranch
     },
   };
 
