@@ -11,7 +11,7 @@ import { REPO_SLUG } from './circleci/constants';
 
 const { CIRCLECI_TOKEN } = process.env;
 
-async function runCheckOn (context: Context, baseSha: string) {
+async function runCheckOn (context: Context, baseSha: string, baseBranch: string) {
   const checkContext: IContext = {
     bot: context,
     logger: new Logger(shortid()),
@@ -25,7 +25,7 @@ async function runCheckOn (context: Context, baseSha: string) {
     details_url: 'https://github.com/electron/archaeologist',
   }));
 
-  const circleBuildNumber = await runCircleBuild(checkContext, baseSha);
+  const circleBuildNumber = await runCircleBuild(checkContext, baseSha, baseBranch);
   const buildSuccess = await waitForCircle(checkContext, circleBuildNumber);
   if (!buildSuccess) {
     checkContext.logger.error('CircleCI build failed, cancelling check');
@@ -71,10 +71,15 @@ async function runCheckOn (context: Context, baseSha: string) {
 }
 
 const probotRunner = (app: Application) => {
-  app.on(['check_suite.requested', 'check_suite.rerequested'], async (context) => {
-    const { payload } = context;
+  app.on([
+    'pull_request.opened', 
+    'pull_request.reopened', 
+    'pull_request.synchronize'
+  ], async (context) => {
+    const headSha = context.payload.pull_request.head.sha;
+    const baseBranch = context.payload.pull_request.base.ref;
 
-    runCheckOn(context, payload.check_suite.head_sha);
+    runCheckOn(context, headSha, baseBranch);
   });
 };
 

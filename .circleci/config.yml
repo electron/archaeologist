@@ -21,7 +21,7 @@ jobs:
 
       - run: git checkout $DIG_SPOT
 
-      - run: git merge-base master HEAD > .dig-old
+      - run: git merge-base $BASE_BRANCH HEAD > .dig-old
 
       - run: rm -rf node_modules && npm install
 
