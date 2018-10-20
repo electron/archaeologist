@@ -11,21 +11,21 @@ import { REPO_SLUG } from './circleci/constants';
 
 const { CIRCLECI_TOKEN } = process.env;
 
-async function runCheckOn (context: Context, baseSha: string, baseBranch: string) {
+async function runCheckOn (context: Context, headSha: string, baseBranch: string) {
   const checkContext: IContext = {
     bot: context,
     logger: new Logger(shortid()),
   };
-  checkContext.logger.info('Starting check run for:', baseSha);
+  checkContext.logger.info('Starting check run for:', headSha);
 
   const check = await context.github.checks.create(context.repo({
     name: 'Artifact Comparison',
-    head_sha: baseSha,
+    head_sha: headSha,
     status: 'in_progress' as 'in_progress',
     details_url: 'https://github.com/electron/archaeologist',
   }));
 
-  const circleBuildNumber = await runCircleBuild(checkContext, baseSha, baseBranch);
+  const circleBuildNumber = await runCircleBuild(checkContext, headSha, baseBranch);
   const buildSuccess = await waitForCircle(checkContext, circleBuildNumber);
   if (!buildSuccess) {
     checkContext.logger.error('CircleCI build failed, cancelling check');
