@@ -19,6 +19,8 @@ jobs:
 
       - run: mkdir -p artifacts
 
+      - run: git remote add fork $ADDITIONAL_REMOTE && git fetch fork
+
       - run: git checkout $DIG_SPOT
 
       - run: git merge-base origin/$BASE_BRANCH HEAD > .dig-old
