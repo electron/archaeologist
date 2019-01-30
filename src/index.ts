@@ -30,7 +30,7 @@ async function runCheckOn (context: Context, headSha: string, baseBranch: string
   if (!buildSuccess) {
     checkContext.logger.error('CircleCI build failed, cancelling check');
     await context.github.checks.update(context.repo({
-      check_run_id: `${check.data.id}`,
+      check_run_id: check.data.id,
       conclusion: 'failure' as 'failure',
       completed_at: (new Date()).toISOString(),
       details_url: `https://circleci.com/gh/${REPO_SLUG}/${circleBuildNumber}`,
@@ -47,7 +47,7 @@ async function runCheckOn (context: Context, headSha: string, baseBranch: string
   const circleArtifacts = await getCircleArtifacts(checkContext, circleBuildNumber);
   if (circleArtifacts.new === circleArtifacts.old) {
     await context.github.checks.update(context.repo({
-      check_run_id: `${check.data.id}`,
+      check_run_id: check.data.id,
       conclusion: 'success' as 'success',
       completed_at: (new Date()).toISOString(),
       output: {
@@ -59,7 +59,7 @@ async function runCheckOn (context: Context, headSha: string, baseBranch: string
     const patch = diff.createPatch('electron.d.ts', circleArtifacts.old, circleArtifacts.new, '', '');
 
     await context.github.checks.update(context.repo({
-      check_run_id: `${check.data.id}`,
+      check_run_id: check.data.id,
       conclusion: 'neutral' as 'neutral',
       completed_at: (new Date()).toISOString(),
       output: {
