@@ -31,7 +31,7 @@ async function runCheckOn (context: Context, headSha: string, baseBranch: string
   if (!buildSuccess) {
     checkContext.logger.error('CircleCI build failed, cancelling check');
     await context.github.checks.update(context.repo({
-      check_run_id: check.data.id,
+      check_run_id: `${check.data.id}`,
       conclusion: 'failure' as 'failure',
       started_at: started_at.toISOString(),
       completed_at: (new Date()).toISOString(),
@@ -47,9 +47,24 @@ async function runCheckOn (context: Context, headSha: string, baseBranch: string
   checkContext.logger.error('CircleCI build succeeded, digging up artifacts');
 
   const circleArtifacts = await getCircleArtifacts(checkContext, circleBuildNumber);
+  if (circleArtifacts.missing.length > 0) {
+    await context.github.checks.update(context.repo({
+      check_run_id: `${check.data.id}`,
+      conclusion: 'failure' as 'failure',
+      started_at: started_at.toISOString(),
+      completed_at: (new Date()).toISOString(),
+      details_url: `https://circleci.com/gh/${REPO_SLUG}/${circleBuildNumber}`,
+      output: {
+        title: 'Digging Failed',
+        summary: 'Although the .d.ts build appears to have succeeded, artifacts were not generated correctly for us to compare',
+      },
+    }));
+    return;
+  }
+
   if (circleArtifacts.new === circleArtifacts.old) {
     await context.github.checks.update(context.repo({
-      check_run_id: check.data.id,
+      check_run_id: `${check.data.id}`,
       conclusion: 'success' as 'success',
       started_at: started_at.toISOString(),
       completed_at: (new Date()).toISOString(),
@@ -62,7 +77,7 @@ async function runCheckOn (context: Context, headSha: string, baseBranch: string
     const patch = diff.createPatch('electron.d.ts', circleArtifacts.old, circleArtifacts.new, '', '');
 
     await context.github.checks.update(context.repo({
-      check_run_id: check.data.id,
+      check_run_id: `${check.data.id}`,
       conclusion: 'neutral' as 'neutral',
       started_at: started_at.toISOString(),
       completed_at: (new Date()).toISOString(),
