@@ -12,6 +12,7 @@ import { REPO_SLUG } from './circleci/constants';
 const { CIRCLECI_TOKEN } = process.env;
 
 async function runCheckOn (context: Context, headSha: string, baseBranch: string, additionalRemote: string) {
+  const started_at = new Date();
   const checkContext: IContext = {
     bot: context,
     logger: new Logger(shortid()),
@@ -32,6 +33,7 @@ async function runCheckOn (context: Context, headSha: string, baseBranch: string
     await context.github.checks.update(context.repo({
       check_run_id: check.data.id,
       conclusion: 'failure' as 'failure',
+      started_at: started_at.toISOString(),
       completed_at: (new Date()).toISOString(),
       details_url: `https://circleci.com/gh/${REPO_SLUG}/${circleBuildNumber}`,
       output: {
@@ -49,6 +51,7 @@ async function runCheckOn (context: Context, headSha: string, baseBranch: string
     await context.github.checks.update(context.repo({
       check_run_id: check.data.id,
       conclusion: 'success' as 'success',
+      started_at: started_at.toISOString(),
       completed_at: (new Date()).toISOString(),
       output: {
         title: 'No Changes',
@@ -61,6 +64,7 @@ async function runCheckOn (context: Context, headSha: string, baseBranch: string
     await context.github.checks.update(context.repo({
       check_run_id: check.data.id,
       conclusion: 'neutral' as 'neutral',
+      started_at: started_at.toISOString(),
       completed_at: (new Date()).toISOString(),
       output: {
         title: 'Changes Detected',
