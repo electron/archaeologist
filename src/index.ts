@@ -1,4 +1,5 @@
-import { Application, Context } from 'probot';
+import { Toolkit } from 'actions-toolkit';
+
 import * as shortid from 'shortid';
 import * as diff from 'diff';
 
@@ -9,29 +10,34 @@ import { Logger } from './logger';
 import { getCircleArtifacts } from './circleci/artifacts';
 import { REPO_SLUG } from './circleci/constants';
 
-const { CIRCLECI_TOKEN } = process.env;
-
-async function runCheckOn (context: Context, headSha: string, baseBranch: string, additionalRemote: string) {
+async function runCheckOn (tools, headSha: string, baseBranch: string, additionalRemote: string) {
   const started_at = new Date();
+  const { owner, repo } = tools.context.repo;
+
   const checkContext: IContext = {
-    bot: context,
+    bot: tools,
     logger: new Logger(shortid()),
   };
   checkContext.logger.info('Starting check run for:', headSha);
 
-  const check = await context.github.checks.create(context.repo({
+  const check = await tools.github.checks.create({
+    owner,
+    repo,
     name: 'Artifact Comparison',
     head_sha: headSha,
     status: 'in_progress' as 'in_progress',
     details_url: 'https://github.com/electron/archaeologist',
-  }));
+  });
 
   const circleBuildNumber = await runCircleBuild(checkContext, headSha, baseBranch, additionalRemote);
   const buildSuccess = await waitForCircle(checkContext, circleBuildNumber);
   if (!buildSuccess) {
     checkContext.logger.error('CircleCI build failed, cancelling check');
-    await context.github.checks.update(context.repo({
-      check_run_id: `${check.data.id}`,
+
+    await tools.github.checks.update({
+      owner,
+      repo,
+      check_run_id: check.data.id,
       conclusion: 'failure' as 'failure',
       started_at: started_at.toISOString(),
       completed_at: (new Date()).toISOString(),
@@ -40,7 +46,7 @@ async function runCheckOn (context: Context, headSha: string, baseBranch: string
         title: 'Digging Failed',
         summary: 'We tried to compare `electron.d.ts` artifacts but something went wrong.',
       },
-    }));
+    });
     return;
   }
 
@@ -48,8 +54,10 @@ async function runCheckOn (context: Context, headSha: string, baseBranch: string
 
   const circleArtifacts = await getCircleArtifacts(checkContext, circleBuildNumber);
   if (circleArtifacts.missing.length > 0) {
-    await context.github.checks.update(context.repo({
-      check_run_id: `${check.data.id}`,
+    await tools.github.checks.update({
+      owner,
+      repo,
+      check_run_id: check.data.id,
       conclusion: 'failure' as 'failure',
       started_at: started_at.toISOString(),
       completed_at: (new Date()).toISOString(),
@@ -58,13 +66,15 @@ async function runCheckOn (context: Context, headSha: string, baseBranch: string
         title: 'Digging Failed',
         summary: 'Although the .d.ts build appears to have succeeded, artifacts were not generated correctly for us to compare',
       },
-    }));
+    });
     return;
   }
 
   if (circleArtifacts.new === circleArtifacts.old) {
-    await context.github.checks.update(context.repo({
-      check_run_id: `${check.data.id}`,
+    await tools.github.checks.update({
+      owner,
+      repo,
+      check_run_id: check.data.id,
       conclusion: 'success' as 'success',
       started_at: started_at.toISOString(),
       completed_at: (new Date()).toISOString(),
@@ -72,12 +82,14 @@ async function runCheckOn (context: Context, headSha: string, baseBranch: string
         title: 'No Changes',
         summary: 'We couldn\'t see any changes in the `electron.d.ts` artifact',
       },
-    }));
+    });
   } else {
     const patch = diff.createPatch('electron.d.ts', circleArtifacts.old, circleArtifacts.new, '', '');
 
-    await context.github.checks.update(context.repo({
-      check_run_id: `${check.data.id}`,
+    await tools.github.checks.update({
+      owner,
+      repo,
+      check_run_id: check.data.id,
       conclusion: 'neutral' as 'neutral',
       started_at: started_at.toISOString(),
       completed_at: (new Date()).toISOString(),
@@ -85,22 +97,20 @@ async function runCheckOn (context: Context, headSha: string, baseBranch: string
         title: 'Changes Detected',
         summary: `Looks like the \`electron.d.ts\` file changed.\n\n\`\`\`\`\`\`diff\n${patch}\n\`\`\`\`\`\``,
       },
-    }));
+    });
   }
 }
 
-const probotRunner = (app: Application) => {
-  app.on([
-    'pull_request.opened', 
-    'pull_request.reopened', 
-    'pull_request.synchronize'
-  ], async (context) => {
-    const headSha = context.payload.pull_request.head.sha;
-    const baseBranch = context.payload.pull_request.base.ref;
-    const forkRemote = context.payload.pull_request.head.repo.clone_url;
+Toolkit.run(async (tools: any) => {
+  const { context } = tools;
 
-    runCheckOn(context, headSha, baseBranch, forkRemote);
-  });
-};
+  const headSha = context.payload.pull_request.head.sha;
+  const baseBranch = context.payload.pull_request.base.ref;
+  const forkRemote = context.payload.pull_request.head.repo.clone_url;
 
-module.exports = probotRunner;
+  runCheckOn(tools, headSha, baseBranch, forkRemote);
+}, { event: [
+  'pull_request.opened', 
+  'pull_request.reopened', 
+  'pull_request.synchronize'
+]})

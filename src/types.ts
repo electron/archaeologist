@@ -1,4 +1,4 @@
-import { Context } from 'probot';
+import { Context } from 'actions-toolkit/lib/context';
 
 type LogMethod = (...messages: string[]) => void;
 

@@ -1,4 +1,4 @@
-import { cyan, red } from 'colors';
+import { cyan } from 'colors';
 import { ILogger } from './types';
 
 export class Logger implements ILogger {
