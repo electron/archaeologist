@@ -3,3 +3,4 @@ private.key*
 node_modules
 lib
 yarn-error.log
+test.js

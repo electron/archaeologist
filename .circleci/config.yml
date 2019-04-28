@@ -1,52 +1,23 @@
 version: 2
 jobs:
-  build:
+  test:
     docker:
-      - image: circleci/node:8.11
-    
-    working_directory: ~/repo
-
+      - image: circleci/node:10.15
     steps:
       - checkout
-  dig:
-    docker:
-      - image: circleci/node:8.11
-
-    working_directory: ~/electron
-
-    steps:
-      - run: git clone https://github.com/electron/electron.git .
-
-      - run: mkdir -p artifacts
-
-      - run: git remote add fork $ADDITIONAL_REMOTE && git fetch fork
-
-      - run: git checkout $DIG_SPOT
-
-      - run: git merge-base origin/$BASE_BRANCH HEAD > .dig-old
-
-      - run: rm -rf node_modules && npm install
-
-      - run: echo "#!/usr/bin/env node\nglobal.x=1" > node_modules/typescript/bin/tsc
-
-      - run: node node_modules/.bin/electron-docs-linter docs --outfile=electron-api.json --version=0.0.0-archaeologist.0
-      
-      - run: node node_modules/.bin/electron-typescript-definitions docs --in=electron-api.json --out=artifacts/electron.new.d.ts
-
-      - run: git checkout .
-
-      - run: git checkout $(cat .dig-old)
-
-      - run: rm -rf node_modules && npm install
-
-      - run: echo "#!/usr/bin/env node\nglobal.x=1" > node_modules/typescript/bin/tsc
-
-      - run: node node_modules/.bin/electron-docs-linter docs --outfile=electron-api.json --version=0.0.0-archaeologist.0
-      
-      - run: node node_modules/.bin/electron-typescript-definitions docs --in=electron-api.json --out=artifacts/electron.old.d.ts
-
-      - run: mv .dig-old artifacts
-
-      - store_artifacts:
-          path: artifacts
-      
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "yarn.lock" }}
+            - v1-dependencies-
+      - run: yarn install
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "yarn.lock" }}
+      - run: yarn lint
+      # - run: yarn test
+workflows:
+  version: 2
+  test:
+    jobs:
+      - test

@@ -12,10 +12,7 @@
 		"allowJs": true,
 		"allowSyntheticDefaultImports": true
 	},
-	"exclude": [
-		"node_modules",
-		"spec",
-		"lib",
-		"working"
+	"include": [
+		"src"
 	]
 }
