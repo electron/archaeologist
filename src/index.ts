@@ -1,6 +1,8 @@
 import { Application, Context } from 'probot';
+import * as cp from 'child_process';
+import * as fs from 'fs-extra';
+import * as path from 'path';
 import * as shortid from 'shortid';
-import * as diff from 'diff';
 
 import { runCircleBuild } from './circleci/run';
 import { waitForCircle } from './circleci/wait';
@@ -8,8 +10,10 @@ import { IContext } from './types';
 import { Logger } from './logger';
 import { getCircleArtifacts } from './circleci/artifacts';
 import { REPO_SLUG } from './circleci/constants';
+import { withTempDir } from './tmp';
 
-const { CIRCLECI_TOKEN } = process.env;
+const stripVersion = (dts: string) =>
+  dts.replace(/Type definitions for Electron .+?\n/g, '');
 
 async function runCheckOn (context: Context, headSha: string, baseBranch: string, additionalRemote: string) {
   const started_at = new Date();
@@ -62,6 +66,9 @@ async function runCheckOn (context: Context, headSha: string, baseBranch: string
     return;
   }
 
+  circleArtifacts.new = stripVersion(circleArtifacts.new);
+  circleArtifacts.old = stripVersion(circleArtifacts.old);
+
   if (circleArtifacts.new === circleArtifacts.old) {
     await context.github.checks.update(context.repo({
       check_run_id: `${check.data.id}`,
@@ -75,7 +82,17 @@ async function runCheckOn (context: Context, headSha: string, baseBranch: string
     }));
   } else {
     checkContext.logger.info('creating patch');
-    const patch = diff.createPatch('electron.d.ts', circleArtifacts.old, circleArtifacts.new, '', '');
+    let patch: string;
+    await withTempDir(async (dir) => {
+      const newPath = path.resolve(dir, 'electron.new.d.ts');
+      const oldPath = path.resolve(dir, 'electron.old.d.ts');
+      await fs.writeFile(newPath, circleArtifacts.new);
+      await fs.writeFile(oldPath, circleArtifacts.old);
+      const diff = cp.spawnSync('git', ['diff', 'electron.old.d.ts', 'electron.new.d.ts'], {
+        cwd: dir,
+      });
+      patch = diff.stdout.toString().split('\n').slice(2).join('\n');
+    });
     checkContext.logger.info('patch created with lenght:', `${patch.length}`);
 
     await context.github.checks.update(context.repo({
@@ -85,7 +102,7 @@ async function runCheckOn (context: Context, headSha: string, baseBranch: string
       completed_at: (new Date()).toISOString(),
       output: {
         title: 'Changes Detected',
-        summary: `Looks like the \`electron.d.ts\` file changed.\n\n\`\`\`\`\`\`diff\n${patch.substr(4000)}\n\`\`\`\`\`\``,
+        summary: `Looks like the \`electron.d.ts\` file changed.\n\n\`\`\`\`\`\`diff\n${patch}\n\`\`\`\`\`\``,
       },
     }));
   }
