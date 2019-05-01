@@ -74,7 +74,9 @@ async function runCheckOn (context: Context, headSha: string, baseBranch: string
       },
     }));
   } else {
+    checkContext.logger.info('creating patch');
     const patch = diff.createPatch('electron.d.ts', circleArtifacts.old, circleArtifacts.new, '', '');
+    checkContext.logger.info('patch created with lenght:', `${patch.length}`);
 
     await context.github.checks.update(context.repo({
       check_run_id: `${check.data.id}`,
@@ -83,7 +85,7 @@ async function runCheckOn (context: Context, headSha: string, baseBranch: string
       completed_at: (new Date()).toISOString(),
       output: {
         title: 'Changes Detected',
-        summary: `Looks like the \`electron.d.ts\` file changed.\n\n\`\`\`\`\`\`diff\n${patch}\n\`\`\`\`\`\``,
+        summary: `Looks like the \`electron.d.ts\` file changed.\n\n\`\`\`\`\`\`diff\n${patch.substr(4000)}\n\`\`\`\`\`\``,
       },
     }));
   }
