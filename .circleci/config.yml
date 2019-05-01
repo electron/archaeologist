@@ -25,25 +25,65 @@ jobs:
 
       - run: git merge-base origin/$BASE_BRANCH HEAD > .dig-old
 
-      - run: rm -rf node_modules && npm install
+      - run:
+          command: |
+            rm -rf node_modules
+            if [ -f "yarn.lock" ]; then
+              yarn install --frozen-lockfile
+            else
+              npm install
+            fi
 
       - run: echo "#!/usr/bin/env node\nglobal.x=1" > node_modules/typescript/bin/tsc
 
-      - run: node node_modules/.bin/electron-docs-linter docs --outfile=electron-api.json --version=0.0.0-archaeologist.0
+      - run:
+          command: |
+            if [ -f "node_modules/.bin/electron-docs-parser" ]; then
+              node node_modules/.bin/electron-docs-parser --dir=./ --outDir=./
+            else
+              node node_modules/.bin/electron-docs-linter docs --outfile=electron-api.json --version=0.0.0-archaeologist.0
+            fi
       
-      - run: node node_modules/.bin/electron-typescript-definitions docs --in=electron-api.json --out=artifacts/electron.new.d.ts
+      - run:
+          command: |
+            if [ -f "node_modules/.bin/electron-docs-parser" ]; then
+              node node_modules/.bin/electron-typescript-definitions --api=electron-api.json --outDir=artifacts
+              mv artifacts/electron.d.ts artifacts/electron.new.d.ts
+            else
+              node node_modules/.bin/electron-typescript-definitions docs --in=electron-api.json --out=artifacts/electron.new.d.ts
+            fi
 
       - run: git checkout .
 
       - run: git checkout $(cat .dig-old)
 
-      - run: rm -rf node_modules && npm install
+      - run:
+          command: |
+            rm -rf node_modules
+            if [ -f "yarn.lock" ]; then
+              yarn install --frozen-lockfile
+            else
+              npm install
+            fi
 
       - run: echo "#!/usr/bin/env node\nglobal.x=1" > node_modules/typescript/bin/tsc
 
-      - run: node node_modules/.bin/electron-docs-linter docs --outfile=electron-api.json --version=0.0.0-archaeologist.0
+      - run:
+          command: |
+            if [ -f "node_modules/.bin/electron-docs-parser" ]; then
+              node node_modules/.bin/electron-docs-parser --dir=./ --outDir=./
+            else
+              node node_modules/.bin/electron-docs-linter docs --outfile=electron-api.json --version=0.0.0-archaeologist.0
+            fi
       
-      - run: node node_modules/.bin/electron-typescript-definitions docs --in=electron-api.json --out=artifacts/electron.old.d.ts
+      - run:
+          command: |
+            if [ -f "node_modules/.bin/electron-docs-parser" ]; then
+              node node_modules/.bin/electron-typescript-definitions --api=electron-api.json --outDir=artifacts
+              mv artifacts/electron.d.ts artifacts/electron.old.d.ts
+            else
+              node node_modules/.bin/electron-typescript-definitions docs --in=electron-api.json --out=artifacts/electron.old.d.ts
+            fi
 
       - run: mv .dig-old artifacts
 
