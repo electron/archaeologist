@@ -15,7 +15,7 @@ export async function runCircleBuild (ctx: IContext, digSpot: string, baseBranch
   };
 
   const response = await fetch(
-    `https://circleci.com/api/v1.1/project/github/${REPO_SLUG}/tree/master?circle-token=${CIRCLE_TOKEN}`,
+    `https://circleci.com/api/v1.1/project/github/${REPO_SLUG}/tree/main?circle-token=${CIRCLE_TOKEN}`,
     {
       method: 'POST',
       headers: {
