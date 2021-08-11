@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/node:10.19
+      - image: circleci/node:14.17
 
     working_directory: ~/repo
 
@@ -10,7 +10,7 @@ jobs:
       - checkout
   dig:
     docker:
-      - image: circleci/node:10.19
+      - image: circleci/node:14.17
 
     working_directory: ~/electron
 
