@@ -7,7 +7,7 @@
     "@octokit/rest": "^16.13.4",
     "colors": "^1.3.2",
     "fs-extra": "^10.1.0",
-    "node-fetch": "^2.1.1",
+    "node-fetch": "^2.6.7",
     "probot": "^7.0.1",
     "shortid": "^2.2.16"
   },
