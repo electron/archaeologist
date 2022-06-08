@@ -1,5 +1,3 @@
-import fetch from 'node-fetch';
-
 import { CIRCLE_TOKEN, REPO_SLUG } from './constants';
 import { IContext } from '../types';
 import { nodeFetch } from '../fetch';
