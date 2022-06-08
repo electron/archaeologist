@@ -2,6 +2,7 @@ import fetch from 'node-fetch';
 
 import { CIRCLE_TOKEN, REPO_SLUG } from './constants';
 import { IContext } from '../types';
+import { nodeFetch } from '../fetch';
 
 type CirclePipelineStatus = 'created' | 'errored' | 'setup-pending' | 'setup' | 'pending';
 
@@ -34,7 +35,7 @@ export async function runCircleBuild (ctx: IContext, digSpot: string, baseBranch
     },
   };
 
-  const response = await fetch(
+  const response = await nodeFetch(
     `https://circleci.com/api/v2/project/gh/${REPO_SLUG}/pipeline`,
     {
       method: 'POST',
@@ -52,7 +53,7 @@ export async function runCircleBuild (ctx: IContext, digSpot: string, baseBranch
   while (buildInfo.state !== 'created') {
     await new Promise(r => setTimeout(r, 5000));
 
-    const buildInfoPoll = await fetch(
+    const buildInfoPoll = await nodeFetch(
       `https://circleci.com/api/v2/pipeline/${buildInfo.id}`,
       {
         headers: {
@@ -63,7 +64,7 @@ export async function runCircleBuild (ctx: IContext, digSpot: string, baseBranch
     buildInfo = await buildInfoPoll.json() as any;
   }
 
-  const workflowsResponse = await fetch(
+  const workflowsResponse = await nodeFetch(
     `https://circleci.com/api/v2/pipeline/${buildInfo.id}/workflow`,
     {
       headers: {
@@ -74,7 +75,7 @@ export async function runCircleBuild (ctx: IContext, digSpot: string, baseBranch
   const workflows: CircleWorkflow[] = (await workflowsResponse.json() as any).items;
   const singleWorkflow = workflows[0];
 
-  const jobsResponse = await fetch(
+  const jobsResponse = await nodeFetch(
     `https://circleci.com/api/v2/workflow/${singleWorkflow.id}/job`,
     {
       headers: {

@@ -1,4 +1,5 @@
 import fetch, { RequestInit } from 'node-fetch';
+import { nodeFetch } from '../fetch';
 
 import { IContext } from '../types';
 import { CIRCLE_TOKEN, REPO_SLUG } from './constants';
@@ -32,7 +33,7 @@ async function waitForSuccess<T>(
     let allowedFailures = ALLOWED_FAILURES;
     const run = () => {
       ctx.logger.info(`Waiter Pinging: ${url}`);
-      fetch(url, opts)
+      nodeFetch(url, opts)
         .then((r) => r.json())
         .then((response: T) => {
           switch (checker(response)) {

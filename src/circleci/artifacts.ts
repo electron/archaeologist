@@ -1,5 +1,4 @@
-import fetch from 'node-fetch';
-
+import { nodeFetch } from '../fetch';
 import { IContext } from '../types';
 import { REPO_SLUG, CIRCLE_TOKEN } from './constants';
 
@@ -19,7 +18,7 @@ export async function getCircleArtifacts (context: IContext, buildNumber: number
   }
 
   context.logger.info('fetching all artifacts for build:', `${buildNumber}`);
-  const response = await fetch(
+  const response = await nodeFetch(
     `https://circleci.com/api/v2/project/gh/${REPO_SLUG}/${buildNumber}/artifacts`,
     {
       headers: {
@@ -49,7 +48,7 @@ export async function getCircleArtifacts (context: IContext, buildNumber: number
       return null;
     }
 
-    const contentResponse = await fetch(`${circleArtifact.url}?circle-token=${CIRCLE_TOKEN}`);
+    const contentResponse = await nodeFetch(`${circleArtifact.url}?circle-token=${CIRCLE_TOKEN}`);
     if (contentResponse.status !== 200) {
       context.logger.error('failed to fetch artifact', `"${circleArtifact.path}"`, 'from build', `"${buildNumber}"`, 'backing off and retrying in a bit', `(${tryCount} more attempts)`)
       await wait(10000);
