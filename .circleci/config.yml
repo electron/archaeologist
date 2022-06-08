@@ -17,14 +17,14 @@ parameters:
 jobs:
   build:
     docker:
-      - image: cimg/node:16
+      - image: cimg/node:16.15
     working_directory: ~/repo
     steps:
       - checkout
 
   dig:
     docker:
-      - image: cimg/node:16
+      - image: cimg/node:16.15
     working_directory: ~/electron
     steps:
       - run: git clone https://github.com/electron/electron.git .
