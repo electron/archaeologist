@@ -14,6 +14,26 @@ parameters:
     type: string
     default: ''
 
+commands:
+  generate-types:
+    parameters:
+      sha-file:
+        type: string
+      filename:
+        type: string
+    steps:
+      - run:
+          name: Generating Types for SHA in << parameters.sha-file >>
+          command: |
+            git checkout $(cat << parameters.sha-file >>)
+            rm -rf node_modules
+            yarn install --frozen-lockfile
+            echo "#!/usr/bin/env node\nglobal.x=1" > node_modules/typescript/bin/tsc
+            node node_modules/.bin/electron-docs-parser --dir=./ --outDir=./
+            node node_modules/.bin/electron-typescript-definitions --api=electron-api.json --outDir=artifacts
+            mv artifacts/electron.d.ts artifacts/<< parameters.filename >>
+            git checkout .
+
 jobs:
   build:
     docker:
@@ -27,54 +47,22 @@ jobs:
       - image: cimg/node:16.15
     working_directory: ~/electron
     steps:
-      - run: git clone https://github.com/electron/electron.git .
-      - run: mkdir -p artifacts
-      - run: git remote add fork << pipeline.parameters.additional_remote >> && git fetch fork
-      - run: git checkout << pipeline.parameters.dig_spot >>
-      - run: git merge-base origin/<< pipeline.parameters.base_branch >> HEAD > .dig-old
       - run:
+          name: Setting Up Dig Site
           command: |
-            rm -rf node_modules
-            yarn install --frozen-lockfile
-      - run: echo "#!/usr/bin/env node\nglobal.x=1" > node_modules/typescript/bin/tsc
-      - run:
-          command: |
-            if [ -f "node_modules/.bin/electron-docs-parser" ]; then
-              node node_modules/.bin/electron-docs-parser --dir=./ --outDir=./
-            else
-              node node_modules/.bin/electron-docs-linter docs --outfile=electron-api.json --version=0.0.0-archaeologist.0
-            fi
-      - run:
-          command: |
-            if [ -f "node_modules/.bin/electron-docs-parser" ]; then
-              node node_modules/.bin/electron-typescript-definitions --api=electron-api.json --outDir=artifacts
-              mv artifacts/electron.d.ts artifacts/electron.new.d.ts
-            else
-              node node_modules/.bin/electron-typescript-definitions docs --in=electron-api.json --out=artifacts/electron.new.d.ts
-            fi
-      - run: git checkout .
-      - run: git checkout $(cat .dig-old)
-      - run:
-          command: |
-            rm -rf node_modules
-            yarn install --frozen-lockfile
-      - run: echo "#!/usr/bin/env node\nglobal.x=1" > node_modules/typescript/bin/tsc
-      - run:
-          command: |
-            if [ -f "node_modules/.bin/electron-docs-parser" ]; then
-              node node_modules/.bin/electron-docs-parser --dir=./ --outDir=./
-            else
-              node node_modules/.bin/electron-docs-linter docs --outfile=electron-api.json --version=0.0.0-archaeologist.0
-            fi
-      - run:
-          command: |
-            if [ -f "node_modules/.bin/electron-docs-parser" ]; then
-              node node_modules/.bin/electron-typescript-definitions --api=electron-api.json --outDir=artifacts
-              mv artifacts/electron.d.ts artifacts/electron.old.d.ts
-            else
-              node node_modules/.bin/electron-typescript-definitions docs --in=electron-api.json --out=artifacts/electron.old.d.ts
-            fi
-      - run: mv .dig-old artifacts
+            git clone https://github.com/electron/electron.git .
+            mkdir -p artifacts
+            git remote add fork << pipeline.parameters.additional_remote >> && git fetch fork
+            git checkout << pipeline.parameters.dig_spot >>
+            git merge-base origin/<< pipeline.parameters.base_branch >> HEAD > .dig-old
+            echo << pipeline.parameters.dig_spot >> > .dig-new
+            cp .dig-old artifacts
+      - generate-types:
+          sha-file: .dig-new
+          filename: electron.new.d.ts
+      - generate-types:
+          sha-file: .dig-old
+          filename: electron.old.d.ts
       - store_artifacts:
           path: artifacts
 
