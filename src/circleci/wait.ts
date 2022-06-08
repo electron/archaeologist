@@ -1,4 +1,3 @@
-import type { RequestInit } from 'node-fetch';
 import { nodeFetch } from '../fetch';
 
 import { IContext } from '../types';
@@ -26,7 +25,7 @@ enum CheckStatus {
 async function waitForSuccess<T>(
   ctx: IContext,
   url: string,
-  opts: RequestInit,
+  opts: Parameters<typeof nodeFetch>[1],
   checker: (response: T) => CheckStatus,
 ) {
   return await new Promise<boolean>((resolve, reject) => {
