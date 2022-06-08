@@ -12,7 +12,6 @@
     "shortid": "^2.2.16"
   },
   "devDependencies": {
-    "@types/bunyan": "^1.8.8",
     "@types/fs-extra": "^9.0.13",
     "@types/node": "^17.0.40",
     "@types/node-fetch": "^2.1.2",
