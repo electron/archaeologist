@@ -33,7 +33,7 @@ export async function getCircleArtifacts (context: IContext, buildNumber: number
     return getCircleArtifacts(context, buildNumber, tryCount - 1);
   }
 
-  const artifactList: Array<CircleArtifact> = await response.json() as any;
+  const artifactList: Array<CircleArtifact> = (await response.json() as any).items;
   const missing: string[] = [];
 
   async function getArtifact (name: string, tryCount = 5) {
