@@ -5,6 +5,12 @@ import { REPO_SLUG, CIRCLE_TOKEN } from './constants';
 
 const wait = (milliseconds: number) => new Promise<void>(r => setTimeout(r, milliseconds));
 
+type CircleArtifact = {
+  path: string;
+  url: string;
+  node_index: number;
+}
+
 export async function getCircleArtifacts (context: IContext, buildNumber: number, tryCount = 5) {
   if (tryCount === 0) {
     return {
@@ -14,7 +20,12 @@ export async function getCircleArtifacts (context: IContext, buildNumber: number
 
   context.logger.info('fetching all artifacts for build:', `${buildNumber}`);
   const response = await fetch(
-    `https://circleci.com/api/v1.1/project/github/${REPO_SLUG}/${buildNumber}/artifacts?circle-token=${CIRCLE_TOKEN}`
+    `https://circleci.com/api/v2/project/gh/${REPO_SLUG}/${buildNumber}/artifacts`,
+    {
+      headers: {
+        'Circle-Token': CIRCLE_TOKEN,
+      },
+    }
   );
   if (response.status !== 200) {
     context.logger.error('failed to fetch artifacts for build:', `${buildNumber}`, 'backing off and retrying in a bit', `(${tryCount} more attempts)`);
@@ -22,7 +33,7 @@ export async function getCircleArtifacts (context: IContext, buildNumber: number
     return getCircleArtifacts(context, buildNumber, tryCount - 1);
   }
 
-  const artifactList = await response.json();
+  const artifactList: Array<CircleArtifact> = await response.json() as any;
   const missing: string[] = [];
 
   async function getArtifact (name: string, tryCount = 5) {

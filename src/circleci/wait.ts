@@ -2,6 +2,7 @@ import fetch, { RequestInit } from 'node-fetch';
 
 import { IContext } from '../types';
 import { CIRCLE_TOKEN, REPO_SLUG } from './constants';
+import { CircleJob } from './run';
 
 const CHECK_INTERVAL = 5000;
 const ALLOWED_FAILURES = 3;
@@ -33,7 +34,7 @@ async function waitForSuccess<T>(
       ctx.logger.info(`Waiter Pinging: ${url}`);
       fetch(url, opts)
         .then((r) => r.json())
-        .then((response) => {
+        .then((response: T) => {
           switch (checker(response)) {
             case CheckStatus.BUILD_PASSED:
               ctx.logger.info(`Waiter Success: ${url}`);
@@ -65,21 +66,23 @@ async function waitForSuccess<T>(
 export async function waitForCircle(ctx: IContext, buildNumber: number) {
   return await waitForSuccess<any>(
     ctx,
-    `https://circleci.com/api/v1.1/project/github/${REPO_SLUG}/${buildNumber}`,
+    `https://circleci.com/api/v2/project/gh/${REPO_SLUG}/job/${buildNumber}`,
     {
       method: 'GET',
       headers: {
-        Authorization: `Basic ${CIRCLE_TOKEN}`
-      }
+        'Circle-Token': CIRCLE_TOKEN,
+      },
     },
-    (d) => {
-      if (d.lifecycle === 'finished') {
-        if (d.outcome === 'success') {
-          return CheckStatus.BUILD_PASSED;
-        } else {
-          return CheckStatus.BUILD_FAILED;
-        }
-      }
+    (d: CircleJob) => {
+      // if (d.status !== 'finished') {
+      //   if (d.outcome === 'success') {
+      //     return CheckStatus.BUILD_PASSED;
+      //   } else {
+      //     return CheckStatus.BUILD_FAILED;
+      //   }
+      // }
+      if (d.status === 'success') return CheckStatus.BUILD_PASSED;
+      if (d.status === 'failed') return CheckStatus.BUILD_FAILED;
       return CheckStatus.BUILD_RUNNING;
     }
   );
