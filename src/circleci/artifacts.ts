@@ -10,10 +10,20 @@ type CircleArtifact = {
   node_index: number;
 }
 
-export async function getCircleArtifacts (context: IContext, buildNumber: number, tryCount = 5) {
+type CircleArtifactsInfo = {
+  missing: string[];
+  old: string | null;
+  new: string | null;
+  oldDigSpot: string | null;
+};
+
+export async function getCircleArtifacts (context: IContext, buildNumber: number, tryCount = 5): Promise<CircleArtifactsInfo> {
   if (tryCount === 0) {
     return {
       missing: ['electron.new.d.ts', 'electron.old.d.ts', '.dig-old'],
+      old: null,
+      new: null,
+      oldDigSpot: null,
     };
   }
 
@@ -35,7 +45,7 @@ export async function getCircleArtifacts (context: IContext, buildNumber: number
   const artifactList: Array<CircleArtifact> = (await response.json() as any).items;
   const missing: string[] = [];
 
-  async function getArtifact (name: string, tryCount = 5) {
+  async function getArtifact (name: string, tryCount = 5): Promise<string | null> {
     if (tryCount === 0) {
       missing.push(name);
       return null;
@@ -67,6 +77,6 @@ export async function getCircleArtifacts (context: IContext, buildNumber: number
     missing,
     new: contents[0],
     old: contents[1],
-    oldDigSpot: contents[2].trim(),
+    oldDigSpot: contents[2] === null ? null : contents[2].trim(),
   };
 }

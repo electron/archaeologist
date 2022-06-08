@@ -8,9 +8,9 @@
 		],
 		"sourceMap": true,
 		"rootDir": "src",
-    "experimentalDecorators": true,
-		"allowJs": true,
-		"allowSyntheticDefaultImports": true
+		"allowJs": false,
+		"allowSyntheticDefaultImports": true,
+		"strict": true
 	},
 	"exclude": [
 		"node_modules",

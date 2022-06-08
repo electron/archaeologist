@@ -33,7 +33,7 @@ async function waitForSuccess<T>(
     const run = () => {
       ctx.logger.info(`Waiter Pinging: ${url}`);
       nodeFetch(url, opts)
-        .then((r) => r.json())
+        .then((r) => r.json() as any)
         .then((response: T) => {
           switch (checker(response)) {
             case CheckStatus.BUILD_PASSED:

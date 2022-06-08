@@ -2,7 +2,7 @@ import { ApplicationFunction, Context } from 'probot';
 import * as cp from 'child_process';
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import * as shortid from 'shortid';
+import shortid from 'shortid';
 
 import { runCircleBuild } from './circleci/run';
 import { waitForCircle } from './circleci/wait';
@@ -51,7 +51,7 @@ async function runCheckOn (context: PRContext, headSha: string, baseBranch: stri
   checkContext.logger.error('CircleCI build succeeded, digging up artifacts');
 
   const circleArtifacts = await getCircleArtifacts(checkContext, circleBuildNumber);
-  if (circleArtifacts.missing.length > 0) {
+  if (circleArtifacts.missing.length > 0 || !circleArtifacts.new || !circleArtifacts.old || !circleArtifacts.oldDigSpot) {
     await context.octokit.checks.update(context.repo({
       check_run_id: `${check.data.id}`,
       conclusion: 'failure' as 'failure',
@@ -82,8 +82,7 @@ async function runCheckOn (context: PRContext, headSha: string, baseBranch: stri
     }));
   } else {
     checkContext.logger.info('creating patch');
-    let patch: string;
-    await withTempDir(async (dir) => {
+    const patch = await withTempDir(async (dir) => {
       const newPath = path.resolve(dir, 'electron.new.d.ts');
       const oldPath = path.resolve(dir, 'electron.old.d.ts');
       await fs.writeFile(newPath, circleArtifacts.new);
@@ -91,7 +90,7 @@ async function runCheckOn (context: PRContext, headSha: string, baseBranch: stri
       const diff = cp.spawnSync('git', ['diff', 'electron.old.d.ts', 'electron.new.d.ts'], {
         cwd: dir,
       });
-      patch = diff.stdout.toString().split('\n').slice(2).join('\n');
+      return diff.stdout.toString().split('\n').slice(2).join('\n');
     });
     checkContext.logger.info('patch created with lenght:', `${patch.length}`);
 
