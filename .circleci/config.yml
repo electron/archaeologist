@@ -82,13 +82,12 @@ workflows:
   version: 2
   build:
     when:
-      condition:
-        not: << pipeline.parameters.should_dig >>
+      equal: [ << pipeline.parameters.should_dig >>, false ]
     jobs:
       - build
   
   dig:
     when:
-      condition: << pipeline.parameters.should_dig >>
+      equal: [ << pipeline.parameters.should_dig >>, true ]
     jobs:
       - dig
