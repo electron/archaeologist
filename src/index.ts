@@ -31,6 +31,12 @@ async function runCheckOn (context: PRContext, headSha: string, baseBranch: stri
   }));
 
   const circleBuildNumber = await runCircleBuild(checkContext, headSha, baseBranch, additionalRemote);
+
+  await context.octokit.checks.update(context.repo({
+    check_run_id: `${check.data.id}`,
+    details_url: `https://circleci.com/gh/${REPO_SLUG}/${circleBuildNumber}`,
+  }));
+
   const buildSuccess = await waitForCircle(checkContext, circleBuildNumber);
   if (!buildSuccess) {
     checkContext.logger.error('CircleCI build failed, cancelling check');
@@ -39,7 +45,6 @@ async function runCheckOn (context: PRContext, headSha: string, baseBranch: stri
       conclusion: 'failure' as 'failure',
       started_at: started_at.toISOString(),
       completed_at: (new Date()).toISOString(),
-      details_url: `https://circleci.com/gh/${REPO_SLUG}/${circleBuildNumber}`,
       output: {
         title: 'Digging Failed',
         summary: 'We tried to compare `electron.d.ts` artifacts but something went wrong.',
@@ -57,7 +62,6 @@ async function runCheckOn (context: PRContext, headSha: string, baseBranch: stri
       conclusion: 'failure' as 'failure',
       started_at: started_at.toISOString(),
       completed_at: (new Date()).toISOString(),
-      details_url: `https://circleci.com/gh/${REPO_SLUG}/${circleBuildNumber}`,
       output: {
         title: 'Digging Failed',
         summary: 'Although the .d.ts build appears to have succeeded, artifacts were not generated correctly for us to compare',
