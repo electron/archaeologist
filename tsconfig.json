@@ -4,7 +4,8 @@
 		"target": "es2018",
 		"outDir": "lib",
 		"lib": [
-			"ES2022"
+			"ES2022",
+			"dom"
 		],
 		"sourceMap": true,
 		"rootDir": "src",
