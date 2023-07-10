@@ -9,19 +9,24 @@ type CirclePipeline = {
   state: CirclePipelineStatus;
   number: number;
   created_at: string;
-}
+};
 
 type CircleWorkflow = {
   id: string;
-}
+};
 
 export type CircleJob = {
   job_number: number;
   id: string;
   status: 'success' | 'failed' | 'running';
-}
+};
 
-export async function runCircleBuild (ctx: IContext, digSpot: string, baseBranch: string, additionalRemote: string) {
+export async function runCircleBuild(
+  ctx: IContext,
+  digSpot: string,
+  baseBranch: string,
+  additionalRemote: string,
+) {
   ctx.logger.info(`Triggering CircleCI to run dig on for target: ${digSpot}`);
   const buildRequest: Record<string, string | Record<string, string | boolean>> = {
     branch: 'main',
@@ -33,33 +38,27 @@ export async function runCircleBuild (ctx: IContext, digSpot: string, baseBranch
     },
   };
 
-  const response = await nodeFetch(
-    `https://circleci.com/api/v2/project/gh/${REPO_SLUG}/pipeline`,
-    {
-      method: 'POST',
-      headers: {
-        'Circle-Token': CIRCLE_TOKEN,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(buildRequest)
+  const response = await nodeFetch(`https://circleci.com/api/v2/project/gh/${REPO_SLUG}/pipeline`, {
+    method: 'POST',
+    headers: {
+      'Circle-Token': CIRCLE_TOKEN,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
     },
-  );
+    body: JSON.stringify(buildRequest),
+  });
 
-  let buildInfo: CirclePipeline = await response.json() as any;
+  let buildInfo: CirclePipeline = (await response.json()) as any;
 
   while (buildInfo.state !== 'created') {
-    await new Promise(r => setTimeout(r, 5000));
+    await new Promise((r) => setTimeout(r, 5000));
 
-    const buildInfoPoll = await nodeFetch(
-      `https://circleci.com/api/v2/pipeline/${buildInfo.id}`,
-      {
-        headers: {
-          'Circle-Token': CIRCLE_TOKEN,
-        }
-      }
-    );
-    buildInfo = await buildInfoPoll.json() as any;
+    const buildInfoPoll = await nodeFetch(`https://circleci.com/api/v2/pipeline/${buildInfo.id}`, {
+      headers: {
+        'Circle-Token': CIRCLE_TOKEN,
+      },
+    });
+    buildInfo = (await buildInfoPoll.json()) as any;
   }
 
   const workflowsResponse = await nodeFetch(
@@ -67,10 +66,10 @@ export async function runCircleBuild (ctx: IContext, digSpot: string, baseBranch
     {
       headers: {
         'Circle-Token': CIRCLE_TOKEN,
-      }
-    }
+      },
+    },
   );
-  const workflows: CircleWorkflow[] = (await workflowsResponse.json() as any).items;
+  const workflows: CircleWorkflow[] = ((await workflowsResponse.json()) as any).items;
   const singleWorkflow = workflows[0];
 
   const jobsResponse = await nodeFetch(
@@ -78,10 +77,10 @@ export async function runCircleBuild (ctx: IContext, digSpot: string, baseBranch
     {
       headers: {
         'Circle-Token': CIRCLE_TOKEN,
-      }
-    }
-  )
-  const jobs: CircleJob[] = (await jobsResponse.json() as any).items;
+      },
+    },
+  );
+  const jobs: CircleJob[] = ((await jobsResponse.json()) as any).items;
 
   return jobs[0].job_number;
 }

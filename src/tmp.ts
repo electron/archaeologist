@@ -1,5 +1,5 @@
 import * as fs from 'fs-extra';
-import *  as path from 'path';
+import * as path from 'path';
 import * as os from 'os';
 
 const tmpBase = path.resolve(os.tmpdir(), 'diffing');
@@ -11,4 +11,4 @@ export const withTempDir = async <T>(fn: (dir: string) => Promise<T>): Promise<T
   } finally {
     await fs.remove(tmpDir);
   }
-}
+};
