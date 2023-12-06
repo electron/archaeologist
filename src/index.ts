@@ -121,7 +121,10 @@ async function runCheckOn(
       });
       return diff.stdout.toString().split('\n').slice(2).join('\n');
     });
-    checkContext.logger.info('patch created with lenght:', `${patch.length}`);
+    checkContext.logger.info('patch created with length:', `${patch.length}`);
+
+    const fullSummary = `Looks like the \`electron.d.ts\` file changed.\n\n\`\`\`\`\`\`diff\n${patch}\n\`\`\`\`\`\``;
+    const tooBigSummary = `Looks like the \`electron.d.ts\` file changed, but the diff is too large to display here. See artifacts on the CircleCI build.`;
 
     await context.octokit.checks.update(
       context.repo({
@@ -131,7 +134,7 @@ async function runCheckOn(
         completed_at: new Date().toISOString(),
         output: {
           title: 'Changes Detected',
-          summary: `Looks like the \`electron.d.ts\` file changed.\n\n\`\`\`\`\`\`diff\n${patch}\n\`\`\`\`\`\``,
+          summary: fullSummary.length > 65535 ? tooBigSummary : fullSummary,
         },
       }),
     );
