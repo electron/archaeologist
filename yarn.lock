@@ -125,10 +125,10 @@
   resolved "https://registry.yarnpkg.com/@octokit/openapi-types/-/openapi-types-11.2.0.tgz#b38d7fc3736d52a1e96b230c1ccd4a58a2f400a6"
   integrity sha512-PBsVO+15KSlGmiI8QAzaqvsNlZlrDlyAJYcrXBCvVUxCp7VnXjkwPoFHgjEJXx3WF9BAwkA6nfCUA7i9sODzKA==
 
-"@octokit/openapi-types@^13.11.0":
-  version "13.13.1"
-  resolved "https://registry.yarnpkg.com/@octokit/openapi-types/-/openapi-types-13.13.1.tgz#a783bacb1817c9f61a2a0c3f81ea22ad62340fdf"
-  integrity sha512-4EuKSk3N95UBWFau3Bz9b3pheQ8jQYbKmBL5+GSuY8YDPDwu03J4BjI+66yNi8aaX/3h1qDpb0mbBkLdr+cfGQ==
+"@octokit/openapi-types@^14.0.0":
+  version "14.0.0"
+  resolved "https://registry.yarnpkg.com/@octokit/openapi-types/-/openapi-types-14.0.0.tgz#949c5019028c93f189abbc2fb42f333290f7134a"
+  integrity sha512-HNWisMYlR8VCnNurDU6os2ikx0s0VyEjDYHNS/h4cgb8DeOxQ0n72HyinUtdDVxJhFy3FWLGl0DJhfEWk3P5Iw==
 
 "@octokit/plugin-enterprise-compatibility@^1.2.8":
   version "1.3.0"
@@ -197,31 +197,31 @@
   dependencies:
     "@octokit/openapi-types" "^11.2.0"
 
-"@octokit/types@^7.1.1":
-  version "7.5.1"
-  resolved "https://registry.yarnpkg.com/@octokit/types/-/types-7.5.1.tgz#4e8b182933c17e1f41cc25d44757dbdb7bd76c1b"
-  integrity sha512-Zk4OUMLCSpXNI8KZZn47lVLJSsgMyCimsWWQI5hyjZg7hdYm0kjotaIkbG0Pp8SfU2CofMBzonboTqvzn3FrJA==
+"@octokit/types@^8.0.0":
+  version "8.2.1"
+  resolved "https://registry.yarnpkg.com/@octokit/types/-/types-8.2.1.tgz#a6de091ae68b5541f8d4fcf9a12e32836d4648aa"
+  integrity sha512-8oWMUji8be66q2B9PmEIUyQm00VPDPun07umUWSaCwxmeaquFBro4Hcc3ruVoDo3zkQyZBlRvhIMEYS3pBhanw==
   dependencies:
-    "@octokit/openapi-types" "^13.11.0"
+    "@octokit/openapi-types" "^14.0.0"
 
 "@octokit/webhooks-methods@^2.0.0":
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/@octokit/webhooks-methods/-/webhooks-methods-2.0.0.tgz#1108b9ea661ca6c81e4a8bfa63a09eb27d5bc2db"
   integrity sha512-35cfQ4YWlnZnmZKmIxlGPUPLtbkF8lr/A/1Sk1eC0ddLMwQN06dOuLc+dI3YLQS+T+MoNt3DIQ0NynwgKPilig==
 
-"@octokit/webhooks-types@5.6.0":
-  version "5.6.0"
-  resolved "https://registry.yarnpkg.com/@octokit/webhooks-types/-/webhooks-types-5.6.0.tgz#cbc908ef0df997de7f65da4e4003ecb8430410d3"
-  integrity sha512-y3MqE6N6Ksg1+YV0sXVpW2WP7Y24h7rUp2hDJuzoqWdKGr7owmRDyHC72INwfCYNzura/vsNPXvc6Xbfp4wGGw==
+"@octokit/webhooks-types@5.8.0":
+  version "5.8.0"
+  resolved "https://registry.yarnpkg.com/@octokit/webhooks-types/-/webhooks-types-5.8.0.tgz#b76d1a3e3ad82cec5680d3c6c3443a620047a6ef"
+  integrity sha512-8adktjIb76A7viIdayQSFuBEwOzwhDC+9yxZpKNHjfzrlostHCw0/N7JWpWMObfElwvJMk2fY2l1noENCk9wmw==
 
-"@octokit/webhooks@^9.8.4":
-  version "9.24.0"
-  resolved "https://registry.yarnpkg.com/@octokit/webhooks/-/webhooks-9.24.0.tgz#3e3b194ee67151f674e8d0d565c8179828a12b3d"
-  integrity sha512-s1nqplA+j4sP7Cz40jn/Q2ipkKRKJ7Gi+NzZiSnwNfisYNduLHEwMUJVBEKc5I0r6GMcZZRJOe6PJ2rJXYW66g==
+"@octokit/webhooks@^9.26.3":
+  version "9.26.3"
+  resolved "https://registry.yarnpkg.com/@octokit/webhooks/-/webhooks-9.26.3.tgz#44353c4915229efeb3d01f9ab7adfdc2911535ae"
+  integrity sha512-DLGk+gzeVq5oK89Bo601txYmyrelMQ7Fi5EnjHE0Xs8CWicy2xkmnJMKptKJrBJpstqbd/9oeDFi/Zj2pudBDQ==
   dependencies:
     "@octokit/request-error" "^2.0.2"
     "@octokit/webhooks-methods" "^2.0.0"
-    "@octokit/webhooks-types" "5.6.0"
+    "@octokit/webhooks-types" "5.8.0"
     aggregate-error "^3.1.0"
 
 "@probot/get-private-key@^1.1.0":
@@ -1397,10 +1397,10 @@ prettier@^3.0.0:
   resolved "https://registry.yarnpkg.com/prettier/-/prettier-3.0.0.tgz#e7b19f691245a21d618c68bc54dc06122f6105ae"
   integrity sha512-zBf5eHpwHOGPC47h0zrPyNn+eAEIdEzfywMoYn2XPi0P44Zp0tSq64rq0xAREh4auw2cJZHo9QUob+NqCQky4g==
 
-probot@^12.2.4:
-  version "12.2.8"
-  resolved "https://registry.yarnpkg.com/probot/-/probot-12.2.8.tgz#ac8bae43e557dfb89b5b3e5cc8579801cb509465"
-  integrity sha512-O2WqJmgXUijAOTHaIBEW3jC5OU9Rq+eUg/AEBI5zkAUZaxzJMQvXvGvhVsdFE3Zt9Z3ceGN8Z2cgN+NTItSrCQ==
+probot@^12.3.3:
+  version "12.3.3"
+  resolved "https://registry.yarnpkg.com/probot/-/probot-12.3.3.tgz#f5a430cd34efa27d9abb2318417be029bfe3d511"
+  integrity sha512-cdtKd+xISzi8sw6++BYBXleRknCA6hqUMoHj/sJqQBrjbNxQLhfeFCq9O2d0Z4eShsy5YFRR3MWwDKJ9uAE0CA==
   dependencies:
     "@octokit/core" "^3.2.4"
     "@octokit/plugin-enterprise-compatibility" "^1.2.8"
@@ -1408,8 +1408,8 @@ probot@^12.2.4:
     "@octokit/plugin-rest-endpoint-methods" "^5.0.1"
     "@octokit/plugin-retry" "^3.0.6"
     "@octokit/plugin-throttling" "^3.3.4"
-    "@octokit/types" "^7.1.1"
-    "@octokit/webhooks" "^9.8.4"
+    "@octokit/types" "^8.0.0"
+    "@octokit/webhooks" "^9.26.3"
     "@probot/get-private-key" "^1.1.0"
     "@probot/octokit-plugin-config" "^1.0.0"
     "@probot/pino" "^2.2.0"
