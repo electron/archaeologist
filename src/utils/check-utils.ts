@@ -3,7 +3,7 @@ import { CheckRunStatus, CheckStatus, PRContext } from '../types';
 import { getSemverLabel } from './label-utils';
 
 // Define the possible check statuses
-const checkStatuses = {
+export const checkStatuses = {
   validNoChanges: {
     conclusion: CheckRunStatus.SUCCESS,
     title: 'No Changes',
@@ -40,7 +40,13 @@ function isSemverLabelValidForNoChanges(semverLabel: string | undefined) {
 }
 
 // Function to get the appropriate check status
-export function getCheckStatusItems(context: PRContext, hasChanges: boolean) {
+export function getCheckStatusItems({
+  context,
+  hasChanges,
+}: {
+  context: PRContext;
+  hasChanges: boolean;
+}) {
   const semverLabel = getSemverLabel(context.payload.pull_request);
 
   if (hasChanges) {

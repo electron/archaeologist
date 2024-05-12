@@ -98,7 +98,7 @@ async function runCheckOn(
   circleArtifacts.old = stripVersion(circleArtifacts.old);
 
   if (circleArtifacts.new === circleArtifacts.old) {
-    const { title, summary, conclusion } = getCheckStatusItems(context, false);
+    const { title, summary, conclusion } = getCheckStatusItems({ context, hasChanges: false });
     await context.octokit.checks.update(
       context.repo({
         check_run_id: `${check.data.id}`,
@@ -126,7 +126,7 @@ async function runCheckOn(
     });
     checkContext.logger.info('patch created with length:', `${patch.length}`);
 
-    const { title, summary, conclusion } = getCheckStatusItems(context, false);
+    const { title, summary, conclusion } = getCheckStatusItems({ context, hasChanges: true });
     const fullSummary = `${summary}Looks like the \`electron.d.ts\` file changed.\n\n\`\`\`\`\`\`diff\n${patch}\n\`\`\`\`\`\``;
     const tooBigSummary = `${summary}Looks like the \`electron.d.ts\` file changed, but the diff is too large to display here. See artifacts on the CircleCI build.`;
 
