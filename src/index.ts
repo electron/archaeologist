@@ -11,6 +11,7 @@ import { Logger } from './logger';
 import { getCircleArtifacts } from './circleci/artifacts';
 import { REPO_SLUG } from './circleci/constants';
 import { withTempDir } from './tmp';
+import { getCheckStatusItems } from './utils/check-utils';
 
 const stripVersion = (dts: string) => dts.replace(/Type definitions for Electron .+?\n/g, '');
 
@@ -97,19 +98,21 @@ async function runCheckOn(
   circleArtifacts.old = stripVersion(circleArtifacts.old);
 
   if (circleArtifacts.new === circleArtifacts.old) {
+    const { title, summary, conclusion } = getCheckStatusItems(context, false);
     await context.octokit.checks.update(
       context.repo({
         check_run_id: `${check.data.id}`,
-        conclusion: 'success' as 'success',
+        conclusion,
         started_at: started_at.toISOString(),
         completed_at: new Date().toISOString(),
         output: {
-          title: 'No Changes',
-          summary: "We couldn't see any changes in the `electron.d.ts` artifact",
+          title,
+          summary,
         },
       }),
     );
   } else {
+    // Check label if semvor/none, conclusion error
     checkContext.logger.info('creating patch');
     const patch = await withTempDir(async (dir) => {
       const newPath = path.resolve(dir, 'electron.new.d.ts');
@@ -123,17 +126,18 @@ async function runCheckOn(
     });
     checkContext.logger.info('patch created with length:', `${patch.length}`);
 
-    const fullSummary = `Looks like the \`electron.d.ts\` file changed.\n\n\`\`\`\`\`\`diff\n${patch}\n\`\`\`\`\`\``;
-    const tooBigSummary = `Looks like the \`electron.d.ts\` file changed, but the diff is too large to display here. See artifacts on the CircleCI build.`;
+    const { title, summary, conclusion } = getCheckStatusItems(context, false);
+    const fullSummary = `${summary}Looks like the \`electron.d.ts\` file changed.\n\n\`\`\`\`\`\`diff\n${patch}\n\`\`\`\`\`\``;
+    const tooBigSummary = `${summary}Looks like the \`electron.d.ts\` file changed, but the diff is too large to display here. See artifacts on the CircleCI build.`;
 
     await context.octokit.checks.update(
       context.repo({
         check_run_id: `${check.data.id}`,
-        conclusion: 'neutral' as 'neutral',
+        conclusion,
         started_at: started_at.toISOString(),
         completed_at: new Date().toISOString(),
         output: {
-          title: 'Changes Detected',
+          title,
           summary: fullSummary.length > 65535 ? tooBigSummary : fullSummary,
         },
       }),
