@@ -7,11 +7,14 @@ export interface ILogger {
   error: LogMethod;
 }
 
-export type PRContext = Context<
-  'pull_request.opened' | 'pull_request.reopened' | 'pull_request.synchronize'
->;
-
 export interface IContext {
   logger: ILogger;
-  bot: PRContext;
+  bot: Context;
 }
+
+export type ArtifactsInfo = {
+  missing: string[];
+  old: string | null;
+  new: string | null;
+  oldDigSpot: string | null;
+};
