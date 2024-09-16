@@ -1,13 +1,14 @@
-import { ArtifactsInfo, IContext } from '../types';
+import { ArtifactsInfo } from '../types';
 import { mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 import { execSync } from 'node:child_process';
+import { Context } from 'probot';
 
 const ARTIFACT_FILES = ['electron.new.d.ts', 'electron.old.d.ts', '.dig-old'];
 
 export async function getGHAArtifacts(
-  context: IContext,
+  context: Context,
   runId: number,
   tryCount = 5,
 ): Promise<ArtifactsInfo> {
@@ -22,16 +23,16 @@ export async function getGHAArtifacts(
     return artifactInfo;
   }
 
-  context.logger.info('fetching all artifacts for run:', `${runId}`);
+  context.log.info('fetching all artifacts for run:', `${runId}`);
 
-  const artifacts = await context.bot.octokit.rest.actions.listWorkflowRunArtifacts({
+  const artifacts = await context.octokit.rest.actions.listWorkflowRunArtifacts({
     owner: 'electron',
     repo: 'electron',
     run_id: runId,
   });
 
   if (artifacts.data.artifacts?.length > 0) {
-    const artifactZip = await context.bot.octokit.rest.actions.downloadArtifact({
+    const artifactZip = await context.octokit.rest.actions.downloadArtifact({
       owner: 'electron',
       repo: 'electron',
       artifact_id: artifacts.data.artifacts[0].id,

@@ -1,6 +1,7 @@
 import { CIRCLE_TOKEN, REPO_SLUG } from './constants';
 import { IContext } from '../types';
 import { nodeFetch } from '../fetch';
+import { Context } from 'probot';
 
 type CirclePipelineStatus = 'created' | 'errored' | 'setup-pending' | 'setup' | 'pending';
 
@@ -22,12 +23,12 @@ export type CircleJob = {
 };
 
 export async function runCircleBuild(
-  ctx: IContext,
+  ctx: Context,
   digSpot: string,
   baseBranch: string,
   additionalRemote: string,
 ) {
-  ctx.logger.info(`Triggering CircleCI to run dig on for target: ${digSpot}`);
+  ctx.log.info(`Triggering CircleCI to run dig on for target: ${digSpot}`);
   const buildRequest: Record<string, string | Record<string, string | boolean>> = {
     branch: 'main',
     parameters: {

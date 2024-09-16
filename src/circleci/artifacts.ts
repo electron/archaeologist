@@ -1,5 +1,6 @@
+import { Context } from 'probot';
 import { nodeFetch } from '../fetch';
-import { ArtifactsInfo, IContext } from '../types';
+import { ArtifactsInfo } from '../types';
 import { REPO_SLUG, CIRCLE_TOKEN } from './constants';
 
 const wait = (milliseconds: number) => new Promise<void>((r) => setTimeout(r, milliseconds));
@@ -11,7 +12,7 @@ type CircleArtifact = {
 };
 
 export async function getCircleArtifacts(
-  context: IContext,
+  context: Context,
   buildNumber: number,
   tryCount = 5,
 ): Promise<ArtifactsInfo> {
@@ -24,7 +25,7 @@ export async function getCircleArtifacts(
     };
   }
 
-  context.logger.info('fetching all artifacts for build:', `${buildNumber}`);
+  context.log.info('fetching all artifacts for build:', `${buildNumber}`);
   const response = await nodeFetch(
     `https://circleci.com/api/v2/project/gh/${REPO_SLUG}/${buildNumber}/artifacts`,
     {
@@ -34,7 +35,7 @@ export async function getCircleArtifacts(
     },
   );
   if (response.status !== 200) {
-    context.logger.error(
+    context.log.error(
       'failed to fetch artifacts for build:',
       `${buildNumber}`,
       'backing off and retrying in a bit',
@@ -53,7 +54,7 @@ export async function getCircleArtifacts(
       return null;
     }
 
-    context.logger.info(`fetching artifact "${name}" for build:`, `${buildNumber}`);
+    context.log.info(`fetching artifact "${name}" for build:`, `${buildNumber}`);
     const circleArtifact = artifactList.find((artifact) => artifact.path.endsWith(name));
     if (!circleArtifact) {
       missing.push(name);
@@ -62,7 +63,7 @@ export async function getCircleArtifacts(
 
     const contentResponse = await nodeFetch(`${circleArtifact.url}?circle-token=${CIRCLE_TOKEN}`);
     if (contentResponse.status !== 200) {
-      context.logger.error(
+      context.log.error(
         'failed to fetch artifact',
         `"${circleArtifact.path}"`,
         'from build',

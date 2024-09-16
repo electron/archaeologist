@@ -8,7 +8,7 @@
     "colors": "^1.4.0",
     "fs-extra": "^10.1.0",
     "node-fetch": "^3.2.5",
-    "probot": "^12.3.3",
+    "probot": "^13.3.7",
     "shortid": "^2.2.16"
   },
   "devDependencies": {

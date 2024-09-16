@@ -2,12 +2,10 @@ import { ApplicationFunction, Context } from 'probot';
 import * as cp from 'child_process';
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import shortid from 'shortid';
 
 import { runCircleBuild } from './circleci/run';
 import { waitForCircle } from './circleci/wait';
-import { ArtifactsInfo, IContext } from './types';
-import { Logger } from './logger';
+import { ArtifactsInfo } from './types';
 import { getCircleArtifacts } from './circleci/artifacts';
 import { getGHAArtifacts } from './gha/artifacts';
 import { REPO_SLUG } from './circleci/constants';
@@ -39,11 +37,7 @@ async function runCheckOn(
   additionalRemote: string,
 ) {
   const started_at = new Date();
-  const checkContext: IContext = {
-    bot: context,
-    logger: new Logger(shortid()),
-  };
-  checkContext.logger.info('Starting check run for:', headSha);
+  context.log.info(`Starting check run for ${headSha}`);
 
   const check = await createCheck(
     context,
@@ -53,7 +47,7 @@ async function runCheckOn(
   );
 
   const circleBuildNumber = await runCircleBuild(
-    checkContext,
+    context,
     headSha,
     baseBranch,
     additionalRemote,
@@ -61,17 +55,17 @@ async function runCheckOn(
 
   await context.octokit.checks.update(
     context.repo({
-      check_run_id: `${check.data.id}`,
+      check_run_id: check.data.id,
       details_url: `https://circleci.com/gh/${REPO_SLUG}/${circleBuildNumber}`,
     }),
   );
 
-  const buildSuccess = await waitForCircle(checkContext, circleBuildNumber);
+  const buildSuccess = await waitForCircle(context, circleBuildNumber);
   if (!buildSuccess) {
-    checkContext.logger.error('CircleCI build failed, cancelling check');
+    context.log.error('CircleCI build failed, cancelling check');
     await context.octokit.checks.update(
       context.repo({
-        check_run_id: `${check.data.id}`,
+        check_run_id: check.data.id,
         conclusion: 'failure' as 'failure',
         started_at: started_at.toISOString(),
         completed_at: new Date().toISOString(),
@@ -84,10 +78,10 @@ async function runCheckOn(
     return;
   }
 
-  checkContext.logger.error('CircleCI build succeeded, digging up artifacts');
+  context.log.error('CircleCI build succeeded, digging up artifacts');
 
-  const circleArtifacts = await getCircleArtifacts(checkContext, circleBuildNumber);
-  await updateCheckFromArtifacts(context, circleArtifacts, started_at, check.data.id, checkContext);
+  const circleArtifacts = await getCircleArtifacts(context, circleBuildNumber);
+  await updateCheckFromArtifacts(context, circleArtifacts, started_at, check.data.id);
 }
 
 async function updateCheckFromArtifacts(
@@ -95,7 +89,6 @@ async function updateCheckFromArtifacts(
   artifacts: ArtifactsInfo,
   started_at: Date,
   checkId: number,
-  checkContext: IContext,
 ) {
   if (artifacts.missing.length > 0 || !artifacts.new || !artifacts.old || !artifacts.oldDigSpot) {
     await context.octokit.checks.update(
@@ -131,7 +124,7 @@ async function updateCheckFromArtifacts(
       }),
     );
   } else {
-    checkContext.logger.info('creating patch');
+    context.log.info('creating patch');
     const patch = await withTempDir(async (dir) => {
       const newPath = path.resolve(dir, 'electron.new.d.ts');
       const oldPath = path.resolve(dir, 'electron.old.d.ts');
@@ -142,7 +135,7 @@ async function updateCheckFromArtifacts(
       });
       return diff.stdout.toString().split('\n').slice(2).join('\n');
     });
-    checkContext.logger.info('patch created with length:', `${patch.length}`);
+    context.log.info('patch created with length:', `${patch.length}`);
 
     const fullSummary = `Looks like the \`electron.d.ts\` file changed.\n\n\`\`\`\`\`\`diff\n${patch}\n\`\`\`\`\`\``;
     const tooBigSummary = `Looks like the \`electron.d.ts\` file changed, but the diff is too large to display here. See artifacts on the CircleCI build.`;
@@ -164,14 +157,13 @@ async function updateCheckFromArtifacts(
 
 async function runGHACheckOn(context: Context, headSha: string, checkUrl: string, runId: number) {
   const started_at = new Date();
-  const checkContext: IContext = {
-    bot: context,
-    logger: new Logger(shortid()),
-  };
-  checkContext.logger.info('Starting check run for:', headSha);
+
+  // context.log = context.log.child({ id: shortid() });
+  context.log.info(`Starting check run for: ${headSha}`);
+
   const check = await createCheck(context, headSha, checkUrl, 'Artifact Comparison');
-  const artifacts = await getGHAArtifacts(checkContext, runId);
-  await updateCheckFromArtifacts(context, artifacts, started_at, check.data.id, checkContext);
+  const artifacts = await getGHAArtifacts(context, runId);
+  await updateCheckFromArtifacts(context, artifacts, started_at, check.data.id);
 }
 
 const probotRunner: ApplicationFunction = (app) => {
@@ -186,7 +178,7 @@ const probotRunner: ApplicationFunction = (app) => {
       if (context.name === 'pull_request') {
         const headSha = context.payload.pull_request.head.sha;
         const baseBranch = context.payload.pull_request.base.ref;
-        const forkRemote = context.payload.pull_request.head.repo.clone_url;
+        const forkRemote = context.payload.pull_request.head.repo!.clone_url;
         runCheckOn(context, headSha, baseBranch, forkRemote);
       } else if (context.name === 'check_run') {
         if (context.payload.check_run.name === ARCHAEOLOGIST_CHECK_NAME) {
