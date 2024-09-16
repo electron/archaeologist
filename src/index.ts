@@ -187,7 +187,7 @@ const probotRunner: ApplicationFunction = (app) => {
   app.on(['check_run.completed'], async (context) => {
     if (context.payload.check_run.name === ARCHAEOLOGIST_CHECK_NAME) {
       const headSha = context.payload.check_run.head_sha;
-      const checkUrl = context.payload.check_run.url;
+      const checkUrl = context.payload.check_run.html_url;
       const jobId = context.payload.check_run.id;
       runGHACheckOn(context, headSha, checkUrl, jobId);
     }
