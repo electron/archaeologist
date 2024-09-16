@@ -49,7 +49,7 @@ async function runCheckOn(
     context,
     'Artifact Comparison (CircleCI)',
     headSha,
-    'https://github.com/electron/archaeologist',    
+    'https://github.com/electron/archaeologist',
   );
 
   const circleBuildNumber = await runCircleBuild(
@@ -162,7 +162,7 @@ async function updateCheckFromArtifacts(
   }
 }
 
-async function runGHACheckOn(context: Context, headSha: string, checkUrl: string, runId: number) {
+async function runGHACheckOn(context: Context, headSha: string, checkUrl: string, jobId: number) {
   const started_at = new Date();
   const checkContext: IContext = {
     bot: context,
@@ -170,7 +170,7 @@ async function runGHACheckOn(context: Context, headSha: string, checkUrl: string
   };
   checkContext.logger.info('Starting GHA check run for:', headSha);
   const check = await createCheck(context, 'Artifact Comparison', headSha, checkUrl);
-  const artifacts = await getGHAArtifacts(checkContext, runId);
+  const artifacts = await getGHAArtifacts(checkContext, jobId);
   await updateCheckFromArtifacts(context, artifacts, started_at, check.data.id, checkContext);
 }
 
@@ -188,8 +188,8 @@ const probotRunner: ApplicationFunction = (app) => {
     if (context.payload.check_run.name === ARCHAEOLOGIST_CHECK_NAME) {
       const headSha = context.payload.check_run.head_sha;
       const checkUrl = context.payload.check_run.url;
-      const runId = context.payload.check_run.id;
-      runGHACheckOn(context, headSha, checkUrl, runId);
+      const jobId = context.payload.check_run.id;
+      runGHACheckOn(context, headSha, checkUrl, jobId);
     }
   });
 };

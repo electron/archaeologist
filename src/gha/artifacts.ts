@@ -9,7 +9,7 @@ const wait = (milliseconds: number) => new Promise<void>((r) => setTimeout(r, mi
 
 export async function getGHAArtifacts(
   context: IContext,
-  runId: number,
+  jobId: number,
   tryCount = 5,
 ): Promise<ArtifactsInfo> {
   const artifactInfo: ArtifactsInfo = {
@@ -23,23 +23,40 @@ export async function getGHAArtifacts(
     return artifactInfo;
   }
 
-  context.logger.info('fetching all artifacts for run:', `${runId}`);
+  context.logger.info('fetching all artifacts for job:', `${jobId}`);
+
+  const job = await context.bot.octokit.rest.actions.getJobForWorkflowRun({
+    owner: 'electron',
+    repo: 'electron',
+    job_id: jobId,
+  });
+
+  if (job.status != 200) {
+    context.logger.error(
+      'failed to fetch job:',
+      `${jobId}`,
+      'backing off and retrying in a bit',
+      `(${tryCount} more attempts)`,
+    );
+    await wait(10000);
+    return getGHAArtifacts(context, jobId, tryCount - 1);
+  }
 
   const artifacts = await context.bot.octokit.rest.actions.listWorkflowRunArtifacts({
     owner: 'electron',
     repo: 'electron',
-    run_id: runId,
+    run_id: job.data.run_id,
   });
 
   if (artifacts.status != 200) {
     context.logger.error(
       'failed to fetch artifacts for run:',
-      `${runId}`,
+      `${job.data.run_id}`,
       'backing off and retrying in a bit',
       `(${tryCount} more attempts)`,
     );
     await wait(10000);
-    return getGHAArtifacts(context, runId, tryCount - 1);
+    return getGHAArtifacts(context, jobId, tryCount - 1);
   }
 
   if (artifacts.data.artifacts?.length > 0) {
@@ -79,7 +96,7 @@ export async function getGHAArtifacts(
       }
     }
   } else {
-    context.logger.error('no artifacts found for run:', `${runId}`);
+    context.logger.error('no artifacts found for run:', `${job.data.run_id}`);
   }
 
   return artifactInfo;
