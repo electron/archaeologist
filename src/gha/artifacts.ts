@@ -3,6 +3,7 @@ import { mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import * as path from 'node:path';
 import { execSync } from 'node:child_process';
+import { withTempDir } from '../tmp';
 
 const ARTIFACT_FILES = ['electron.new.d.ts', 'electron.old.d.ts', '.dig-old'];
 const wait = (milliseconds: number) => new Promise<void>((r) => setTimeout(r, milliseconds));
@@ -69,32 +70,33 @@ export async function getGHAArtifacts(
 
     const zipData: any = artifactZip.data;
 
-    const artifactDir = await mkdtemp(tmpdir());
-    const artifactZipFile = path.join(artifactDir, 'artifacts.zip');
-    await writeFile(artifactZipFile, Buffer.from(zipData));
-    execSync(`unzip -o ${artifactZipFile} -d ${artifactDir}`);
-    const files = await readdir(artifactDir);
-    for (const artifactFile of files) {
-      if (ARTIFACT_FILES.includes(artifactFile)) {
-        artifactInfo.missing = artifactInfo.missing.filter(
-          (fileToFilter) => fileToFilter != artifactFile,
-        );
-        const artifactFilePath = path.join(artifactDir, artifactFile);
-        const artifactContents = await readFile(artifactFilePath);
+    await withTempDir(async (artifactDir) => {
+      const artifactZipFile = path.join(artifactDir, 'artifacts.zip');
+      await writeFile(artifactZipFile, Buffer.from(zipData));
+      execSync(`unzip -o ${artifactZipFile} -d ${artifactDir}`);
+      const files = await readdir(artifactDir);
+      for (const artifactFile of files) {
+        if (ARTIFACT_FILES.includes(artifactFile)) {
+          artifactInfo.missing = artifactInfo.missing.filter(
+            (fileToFilter) => fileToFilter != artifactFile,
+          );
+          const artifactFilePath = path.join(artifactDir, artifactFile);
+          const artifactContents = await readFile(artifactFilePath);
 
-        switch (artifactFile) {
-          case 'electron.new.d.ts':
-            artifactInfo.new = artifactContents.toString();
-            break;
-          case 'electron.old.d.ts':
-            artifactInfo.old = artifactContents.toString();
-            break;
-          case '.dig-old':
-            artifactInfo.oldDigSpot = artifactContents.toString();
-            break;
+          switch (artifactFile) {
+            case 'electron.new.d.ts':
+              artifactInfo.new = artifactContents.toString();
+              break;
+            case 'electron.old.d.ts':
+              artifactInfo.old = artifactContents.toString();
+              break;
+            case '.dig-old':
+              artifactInfo.oldDigSpot = artifactContents.toString();
+              break;
+          }
         }
       }
-    }
+    });
   } else {
     context.logger.error('no artifacts found for run:', `${job.data.run_id}`);
   }
