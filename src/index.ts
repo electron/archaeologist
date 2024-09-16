@@ -6,16 +6,33 @@ import shortid from 'shortid';
 
 import { runCircleBuild } from './circleci/run';
 import { waitForCircle } from './circleci/wait';
-import { IContext, PRContext } from './types';
+import { ArtifactsInfo, IContext } from './types';
 import { Logger } from './logger';
 import { getCircleArtifacts } from './circleci/artifacts';
+import { getGHAArtifacts } from './gha/artifacts';
 import { REPO_SLUG } from './circleci/constants';
 import { withTempDir } from './tmp';
 
 const stripVersion = (dts: string) => dts.replace(/Type definitions for Electron .+?\n/g, '');
 
+async function createCheck(
+  context: Context,
+  checkName: string,
+  headSha: string,
+  detailsUrl: string,
+) {
+  return context.octokit.checks.create(
+    context.repo({
+      name: checkName,
+      head_sha: headSha,
+      status: 'in_progress' as 'in_progress',
+      details_url: detailsUrl,
+    }),
+  );
+}
+
 async function runCheckOn(
-  context: PRContext,
+  context: Context,
   headSha: string,
   baseBranch: string,
   additionalRemote: string,
@@ -27,13 +44,11 @@ async function runCheckOn(
   };
   checkContext.logger.info('Starting check run for:', headSha);
 
-  const check = await context.octokit.checks.create(
-    context.repo({
-      name: 'Artifact Comparison',
-      head_sha: headSha,
-      status: 'in_progress' as 'in_progress',
-      details_url: 'https://github.com/electron/archaeologist',
-    }),
+  const check = await createCheck(
+    context,
+    headSha,
+    'https://github.com/electron/archaeologist',
+    'Artifact Comparison (CircleCI)',
   );
 
   const circleBuildNumber = await runCircleBuild(
@@ -71,15 +86,20 @@ async function runCheckOn(
   checkContext.logger.error('CircleCI build succeeded, digging up artifacts');
 
   const circleArtifacts = await getCircleArtifacts(checkContext, circleBuildNumber);
-  if (
-    circleArtifacts.missing.length > 0 ||
-    !circleArtifacts.new ||
-    !circleArtifacts.old ||
-    !circleArtifacts.oldDigSpot
-  ) {
+  await updateCheckFromArtifacts(context, circleArtifacts, started_at, check.data.id, checkContext);
+}
+
+async function updateCheckFromArtifacts(
+  context: Context,
+  artifacts: ArtifactsInfo,
+  started_at: Date,
+  checkId: number,
+  checkContext: IContext,
+) {
+  if (artifacts.missing.length > 0 || !artifacts.new || !artifacts.old || !artifacts.oldDigSpot) {
     await context.octokit.checks.update(
       context.repo({
-        check_run_id: `${check.data.id}`,
+        check_run_id: checkId,
         conclusion: 'failure' as 'failure',
         started_at: started_at.toISOString(),
         completed_at: new Date().toISOString(),
@@ -93,13 +113,13 @@ async function runCheckOn(
     return;
   }
 
-  circleArtifacts.new = stripVersion(circleArtifacts.new);
-  circleArtifacts.old = stripVersion(circleArtifacts.old);
+  artifacts.new = stripVersion(artifacts.new);
+  artifacts.old = stripVersion(artifacts.old);
 
-  if (circleArtifacts.new === circleArtifacts.old) {
+  if (artifacts.new === artifacts.old) {
     await context.octokit.checks.update(
       context.repo({
-        check_run_id: `${check.data.id}`,
+        check_run_id: checkId,
         conclusion: 'success' as 'success',
         started_at: started_at.toISOString(),
         completed_at: new Date().toISOString(),
@@ -114,8 +134,8 @@ async function runCheckOn(
     const patch = await withTempDir(async (dir) => {
       const newPath = path.resolve(dir, 'electron.new.d.ts');
       const oldPath = path.resolve(dir, 'electron.old.d.ts');
-      await fs.writeFile(newPath, circleArtifacts.new);
-      await fs.writeFile(oldPath, circleArtifacts.old);
+      await fs.writeFile(newPath, artifacts.new);
+      await fs.writeFile(oldPath, artifacts.old);
       const diff = cp.spawnSync('git', ['diff', 'electron.old.d.ts', 'electron.new.d.ts'], {
         cwd: dir,
       });
@@ -128,7 +148,7 @@ async function runCheckOn(
 
     await context.octokit.checks.update(
       context.repo({
-        check_run_id: `${check.data.id}`,
+        check_run_id: checkId,
         conclusion: 'neutral' as 'neutral',
         started_at: started_at.toISOString(),
         completed_at: new Date().toISOString(),
@@ -141,15 +161,40 @@ async function runCheckOn(
   }
 }
 
+async function runGHACheckOn(context: Context, headSha: string, checkUrl: string, runId: number) {
+  const started_at = new Date();
+  const checkContext: IContext = {
+    bot: context,
+    logger: new Logger(shortid()),
+  };
+  checkContext.logger.info('Starting check run for:', headSha);
+  const check = await createCheck(context, headSha, checkUrl, 'Artifact Comparison');
+  const artifacts = await getGHAArtifacts(checkContext, runId);
+  await updateCheckFromArtifacts(context, artifacts, started_at, check.data.id, checkContext);
+}
+
 const probotRunner: ApplicationFunction = (app) => {
   app.on(
-    ['pull_request.opened', 'pull_request.reopened', 'pull_request.synchronize'],
+    [
+      'check_run.completed',
+      'pull_request.opened',
+      'pull_request.reopened',
+      'pull_request.synchronize',
+    ],
     async (context) => {
-      const headSha = context.payload.pull_request.head.sha;
-      const baseBranch = context.payload.pull_request.base.ref;
-      const forkRemote = context.payload.pull_request.head.repo.clone_url;
-
-      runCheckOn(context, headSha, baseBranch, forkRemote);
+      if (context.name === 'pull_request') {
+        const headSha = context.payload.pull_request.head.sha;
+        const baseBranch = context.payload.pull_request.base.ref;
+        const forkRemote = context.payload.pull_request.head.repo.clone_url;
+        runCheckOn(context, headSha, baseBranch, forkRemote);
+      } else if (context.name === 'check_run') {
+        if (context.payload.check_run.name === '"Archaeologist Dig') {
+          const headSha = context.payload.check_run.head_sha;
+          const checkUrl = context.payload.check_run.url;
+          const runId = context.payload.check_run.id;
+          runGHACheckOn(context, headSha, checkUrl, runId);
+        }
+      }
     },
   );
 };

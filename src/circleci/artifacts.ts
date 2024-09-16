@@ -1,5 +1,5 @@
 import { nodeFetch } from '../fetch';
-import { IContext } from '../types';
+import { ArtifactsInfo, IContext } from '../types';
 import { REPO_SLUG, CIRCLE_TOKEN } from './constants';
 
 const wait = (milliseconds: number) => new Promise<void>((r) => setTimeout(r, milliseconds));
@@ -10,18 +10,11 @@ type CircleArtifact = {
   node_index: number;
 };
 
-type CircleArtifactsInfo = {
-  missing: string[];
-  old: string | null;
-  new: string | null;
-  oldDigSpot: string | null;
-};
-
 export async function getCircleArtifacts(
   context: IContext,
   buildNumber: number,
   tryCount = 5,
-): Promise<CircleArtifactsInfo> {
+): Promise<ArtifactsInfo> {
   if (tryCount === 0) {
     return {
       missing: ['electron.new.d.ts', 'electron.old.d.ts', '.dig-old'],
