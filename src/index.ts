@@ -47,9 +47,9 @@ async function runCheckOn(
 
   const check = await createCheck(
     context,
-    headSha,
-    'https://github.com/electron/archaeologist',
     'Artifact Comparison (CircleCI)',
+    headSha,
+    'https://github.com/electron/archaeologist',    
   );
 
   const circleBuildNumber = await runCircleBuild(
@@ -169,7 +169,7 @@ async function runGHACheckOn(context: Context, headSha: string, checkUrl: string
     logger: new Logger(shortid()),
   };
   checkContext.logger.info('Starting GHA check run for:', headSha);
-  const check = await createCheck(context, headSha, checkUrl, 'Artifact Comparison');
+  const check = await createCheck(context, 'Artifact Comparison', headSha, checkUrl);
   const artifacts = await getGHAArtifacts(checkContext, runId);
   await updateCheckFromArtifacts(context, artifacts, started_at, check.data.id, checkContext);
 }
