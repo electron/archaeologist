@@ -13,6 +13,7 @@ import { getGHAArtifacts } from './gha/artifacts';
 import { REPO_SLUG } from './circleci/constants';
 import { withTempDir } from './tmp';
 
+const ARCHAEOLOGIST_CHECK_NAME = process.env.ARCHAEOLOGIST_CHECK_NAME || 'Archaeologist Dig';
 const stripVersion = (dts: string) => dts.replace(/Type definitions for Electron .+?\n/g, '');
 
 async function createCheck(
@@ -188,7 +189,7 @@ const probotRunner: ApplicationFunction = (app) => {
         const forkRemote = context.payload.pull_request.head.repo.clone_url;
         runCheckOn(context, headSha, baseBranch, forkRemote);
       } else if (context.name === 'check_run') {
-        if (context.payload.check_run.name === '"Archaeologist Dig') {
+        if (context.payload.check_run.name === ARCHAEOLOGIST_CHECK_NAME) {
           const headSha = context.payload.check_run.head_sha;
           const checkUrl = context.payload.check_run.url;
           const runId = context.payload.check_run.id;
