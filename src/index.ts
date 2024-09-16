@@ -43,7 +43,7 @@ async function runCheckOn(
     bot: context,
     logger: new Logger(shortid()),
   };
-  checkContext.logger.info('Starting check run for:', headSha);
+  checkContext.logger.info('Starting CircleCI check run for:', headSha);
 
   const check = await createCheck(
     context,
@@ -168,7 +168,7 @@ async function runGHACheckOn(context: Context, headSha: string, checkUrl: string
     bot: context,
     logger: new Logger(shortid()),
   };
-  checkContext.logger.info('Starting check run for:', headSha);
+  checkContext.logger.info('Starting GHA check run for:', headSha);
   const check = await createCheck(context, headSha, checkUrl, 'Artifact Comparison');
   const artifacts = await getGHAArtifacts(checkContext, runId);
   await updateCheckFromArtifacts(context, artifacts, started_at, check.data.id, checkContext);
@@ -176,28 +176,22 @@ async function runGHACheckOn(context: Context, headSha: string, checkUrl: string
 
 const probotRunner: ApplicationFunction = (app) => {
   app.on(
-    [
-      'check_run.completed',
-      'pull_request.opened',
-      'pull_request.reopened',
-      'pull_request.synchronize',
-    ],
+    ['pull_request.opened', 'pull_request.reopened', 'pull_request.synchronize'],
     async (context) => {
-      if (context.name === 'pull_request') {
-        const headSha = context.payload.pull_request.head.sha;
-        const baseBranch = context.payload.pull_request.base.ref;
-        const forkRemote = context.payload.pull_request.head.repo.clone_url;
-        runCheckOn(context, headSha, baseBranch, forkRemote);
-      } else if (context.name === 'check_run') {
-        if (context.payload.check_run.name === ARCHAEOLOGIST_CHECK_NAME) {
-          const headSha = context.payload.check_run.head_sha;
-          const checkUrl = context.payload.check_run.url;
-          const runId = context.payload.check_run.id;
-          runGHACheckOn(context, headSha, checkUrl, runId);
-        }
-      }
+      const headSha = context.payload.pull_request.head.sha;
+      const baseBranch = context.payload.pull_request.base.ref;
+      const forkRemote = context.payload.pull_request.head.repo.clone_url;
+      runCheckOn(context, headSha, baseBranch, forkRemote);
     },
   );
+  app.on(['check_run.completed'], async (context) => {
+    if (context.payload.check_run.name === ARCHAEOLOGIST_CHECK_NAME) {
+      const headSha = context.payload.check_run.head_sha;
+      const checkUrl = context.payload.check_run.url;
+      const runId = context.payload.check_run.id;
+      runGHACheckOn(context, headSha, checkUrl, runId);
+    }
+  });
 };
 
 module.exports = probotRunner;

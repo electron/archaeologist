@@ -5,6 +5,7 @@ import * as path from 'node:path';
 import { execSync } from 'node:child_process';
 
 const ARTIFACT_FILES = ['electron.new.d.ts', 'electron.old.d.ts', '.dig-old'];
+const wait = (milliseconds: number) => new Promise<void>((r) => setTimeout(r, milliseconds));
 
 export async function getGHAArtifacts(
   context: IContext,
@@ -29,6 +30,17 @@ export async function getGHAArtifacts(
     repo: 'electron',
     run_id: runId,
   });
+
+  if (artifacts.status != 200) {
+    context.logger.error(
+      'failed to fetch artifacts for run:',
+      `${runId}`,
+      'backing off and retrying in a bit',
+      `(${tryCount} more attempts)`,
+    );
+    await wait(10000);
+    return getGHAArtifacts(context, runId, tryCount - 1);
+  }
 
   if (artifacts.data.artifacts?.length > 0) {
     const artifactZip = await context.bot.octokit.rest.actions.downloadArtifact({
@@ -66,6 +78,8 @@ export async function getGHAArtifacts(
         }
       }
     }
+  } else {
+    context.logger.error('no artifacts found for run:', `${runId}`);
   }
 
   return artifactInfo;
