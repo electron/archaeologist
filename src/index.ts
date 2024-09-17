@@ -2,15 +2,9 @@ import { ApplicationFunction, Context } from 'probot';
 import * as cp from 'child_process';
 import * as fs from 'fs-extra';
 import * as path from 'path';
-import shortid from 'shortid';
 
-import { runCircleBuild } from './circleci/run';
-import { waitForCircle } from './circleci/wait';
 import { ArtifactsInfo } from './types';
-import { Logger } from './logger';
-import { getCircleArtifacts } from './circleci/artifacts';
 import { getGHAArtifacts } from './gha/artifacts';
-import { REPO_SLUG } from './circleci/constants';
 import { withTempDir } from './tmp';
 
 const ARCHAEOLOGIST_CHECK_NAME = process.env.ARCHAEOLOGIST_CHECK_NAME || 'Archaeologist Dig';
@@ -30,55 +24,6 @@ async function createCheck(
       details_url: detailsUrl,
     }),
   );
-}
-
-async function runCheckOn(
-  context: Context,
-  headSha: string,
-  baseBranch: string,
-  additionalRemote: string,
-) {
-  const started_at = new Date();
-  context.log.info('Starting CircleCI check run for:', headSha);
-
-  const check = await createCheck(
-    context,
-    'Artifact Comparison (CircleCI)',
-    headSha,
-    'https://github.com/electron/archaeologist',
-  );
-
-  const circleBuildNumber = await runCircleBuild(context, headSha, baseBranch, additionalRemote);
-
-  await context.octokit.checks.update(
-    context.repo({
-      check_run_id: check.data.id,
-      details_url: `https://circleci.com/gh/${REPO_SLUG}/${circleBuildNumber}`,
-    }),
-  );
-
-  const buildSuccess = await waitForCircle(context, circleBuildNumber);
-  if (!buildSuccess) {
-    context.log.error('CircleCI build failed, cancelling check');
-    await context.octokit.checks.update(
-      context.repo({
-        check_run_id: check.data.id,
-        conclusion: 'failure' as 'failure',
-        started_at: started_at.toISOString(),
-        completed_at: new Date().toISOString(),
-        output: {
-          title: 'Digging Failed',
-          summary: 'We tried to compare `electron.d.ts` artifacts but something went wrong.',
-        },
-      }),
-    );
-    return;
-  }
-
-  context.log.error('CircleCI build succeeded, digging up artifacts');
-
-  const circleArtifacts = await getCircleArtifacts(context, circleBuildNumber);
-  await updateCheckFromArtifacts(context, circleArtifacts, started_at, check.data.id);
 }
 
 async function updateCheckFromArtifacts(
@@ -163,21 +108,13 @@ async function runGHACheckOn(context: Context, headSha: string, checkUrl: string
 }
 
 const probotRunner: ApplicationFunction = (app) => {
-  app.on(
-    ['pull_request.opened', 'pull_request.reopened', 'pull_request.synchronize'],
-    async (context) => {
-      const headSha = context.payload.pull_request.head.sha;
-      const baseBranch = context.payload.pull_request.base.ref;
-      const forkRemote = context.payload.pull_request.head.repo!.clone_url;
-      runCheckOn(context, headSha, baseBranch, forkRemote);
-    },
-  );
   app.on(['check_run.completed'], async (context) => {
-    if (context.payload.check_run.name === ARCHAEOLOGIST_CHECK_NAME) {
-      const headSha = context.payload.check_run.head_sha;
-      const checkUrl = context.payload.check_run.html_url;
-      const jobId = context.payload.check_run.id;
-      runGHACheckOn(context, headSha, checkUrl, jobId);
+    const { check_run } = context.payload;
+    if (check_run.name === ARCHAEOLOGIST_CHECK_NAME) {
+      const headSha = check_run.head_sha;
+      const checkUrl = check_run.url;
+      const runId = check_run.id;
+      runGHACheckOn(context, headSha, checkUrl, runId);
     }
   });
 };
