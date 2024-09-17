@@ -1,15 +1,15 @@
-import { ArtifactsInfo, IContext } from '../types';
-import { mkdtemp, readdir, readFile, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { ArtifactsInfo } from '../types';
+import { readdir, readFile, writeFile } from 'node:fs/promises';
 import * as path from 'node:path';
 import { execSync } from 'node:child_process';
 import { withTempDir } from '../tmp';
+import { Context } from 'probot';
 
 const ARTIFACT_FILES = ['electron.new.d.ts', 'electron.old.d.ts', '.dig-old'];
 const wait = (milliseconds: number) => new Promise<void>((r) => setTimeout(r, milliseconds));
 
 export async function getGHAArtifacts(
-  context: IContext,
+  context: Context,
   jobId: number,
   tryCount = 5,
 ): Promise<ArtifactsInfo> {
@@ -24,16 +24,16 @@ export async function getGHAArtifacts(
     return artifactInfo;
   }
 
-  context.logger.info('fetching all artifacts for job:', `${jobId}`);
+  context.log.info('fetching all artifacts for job:', `${jobId}`);
 
-  const job = await context.bot.octokit.rest.actions.getJobForWorkflowRun({
+  const job = await context.octokit.rest.actions.getJobForWorkflowRun({
     owner: 'electron',
     repo: 'electron',
     job_id: jobId,
   });
 
   if (job.status != 200) {
-    context.logger.error(
+    context.log.error(
       'failed to fetch job:',
       `${jobId}`,
       'backing off and retrying in a bit',
@@ -43,25 +43,23 @@ export async function getGHAArtifacts(
     return getGHAArtifacts(context, jobId, tryCount - 1);
   }
 
-  const artifacts = await context.bot.octokit.rest.actions.listWorkflowRunArtifacts({
+  const artifacts = await context.octokit.rest.actions.listWorkflowRunArtifacts({
     owner: 'electron',
     repo: 'electron',
     run_id: job.data.run_id,
   });
 
   if (artifacts.status != 200) {
-    context.logger.error(
-      'failed to fetch artifacts for run:',
-      `${job.data.run_id}`,
-      'backing off and retrying in a bit',
-      `(${tryCount} more attempts)`,
+    context.log.error(
+      `failed to fetch artifacts for run: ${job.data.run_id}`,
+      `backing off and retrying in a bit (${tryCount} more attempts)`,
     );
     await wait(10000);
     return getGHAArtifacts(context, jobId, tryCount - 1);
   }
 
   if (artifacts.data.artifacts?.length > 0) {
-    const artifactZip = await context.bot.octokit.rest.actions.downloadArtifact({
+    const artifactZip = await context.octokit.rest.actions.downloadArtifact({
       owner: 'electron',
       repo: 'electron',
       artifact_id: artifacts.data.artifacts[0].id,
@@ -98,7 +96,7 @@ export async function getGHAArtifacts(
       }
     });
   } else {
-    context.logger.error('no artifacts found for run:', `${job.data.run_id}`);
+    context.log.error('no artifacts found for run:', `${job.data.run_id}`);
   }
 
   return artifactInfo;

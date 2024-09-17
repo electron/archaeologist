@@ -1,6 +1,6 @@
+import { Context } from 'probot';
 import { nodeFetch } from '../fetch';
 
-import { IContext } from '../types';
 import { CIRCLE_TOKEN, REPO_SLUG } from './constants';
 import { CircleJob } from './run';
 
@@ -23,7 +23,7 @@ enum CheckStatus {
  * @param {(response: T) => boolean} checker
  */
 async function waitForSuccess<T>(
-  ctx: IContext,
+  ctx: Context,
   url: string,
   opts: Parameters<typeof nodeFetch>[1],
   checker: (response: T) => CheckStatus,
@@ -31,23 +31,23 @@ async function waitForSuccess<T>(
   return await new Promise<boolean>((resolve, reject) => {
     let allowedFailures = ALLOWED_FAILURES;
     const run = () => {
-      ctx.logger.info(`Waiter Pinging: ${url}`);
+      ctx.log.info(`Waiter Pinging: ${url}`);
       nodeFetch(url, opts)
         .then((r) => r.json() as any)
         .then((response: T) => {
           switch (checker(response)) {
             case CheckStatus.BUILD_PASSED:
-              ctx.logger.info(`Waiter Success: ${url}`);
+              ctx.log.info(`Waiter Success: ${url}`);
               return resolve(true);
             case CheckStatus.BUILD_FAILED:
-              ctx.logger.info(`Waiter Failed: ${url}`);
+              ctx.log.info(`Waiter Failed: ${url}`);
               return resolve(false);
             case CheckStatus.BUILD_RUNNING:
               setTimeout(run, CHECK_INTERVAL);
           }
         })
         .catch((err) => {
-          ctx.logger.error(`Waiter Error: ${url}`, err);
+          ctx.log.error(`Waiter Error: ${url}`, err);
           if (allowedFailures <= 0) return resolve(false);
           allowedFailures -= 1;
           setTimeout(run, CHECK_INTERVAL);
@@ -63,7 +63,7 @@ async function waitForSuccess<T>(
  * @param {IContext} ctx
  * @param {CircleBuild} build
  */
-export async function waitForCircle(ctx: IContext, buildNumber: number) {
+export async function waitForCircle(ctx: Context, buildNumber: number) {
   return await waitForSuccess<any>(
     ctx,
     `https://circleci.com/api/v2/project/gh/${REPO_SLUG}/job/${buildNumber}`,
@@ -74,13 +74,6 @@ export async function waitForCircle(ctx: IContext, buildNumber: number) {
       },
     },
     (d: CircleJob) => {
-      // if (d.status !== 'finished') {
-      //   if (d.outcome === 'success') {
-      //     return CheckStatus.BUILD_PASSED;
-      //   } else {
-      //     return CheckStatus.BUILD_FAILED;
-      //   }
-      // }
       if (d.status === 'success') return CheckStatus.BUILD_PASSED;
       if (d.status === 'failed') return CheckStatus.BUILD_FAILED;
       return CheckStatus.BUILD_RUNNING;
