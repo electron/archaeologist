@@ -5,15 +5,12 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "colors": "^1.4.0",
     "fs-extra": "^10.1.0",
-    "node-fetch": "^3.2.5",
     "probot": "^13.3.7"
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.13",
     "@types/node": "^18.0.41",
-    "@types/shortid": "^0.0.29",
     "prettier": "^3.0.0",
     "typescript": "^4.8.3"
   },
