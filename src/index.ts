@@ -66,7 +66,7 @@ async function updateCheckFromArtifacts(
       }),
     );
   } else {
-    context.log.info('creating patch');
+    context.log.info('Creating patch');
     const patch = await withTempDir(async (dir) => {
       const newPath = path.resolve(dir, 'electron.new.d.ts');
       const oldPath = path.resolve(dir, 'electron.old.d.ts');
@@ -77,7 +77,8 @@ async function updateCheckFromArtifacts(
       });
       return diff.stdout.toString().split('\n').slice(2).join('\n');
     });
-    context.log.info('patch created with length:', `${patch.length}`);
+
+    context.log.info(`Patch created with length: ${patch.length}`);
 
     const fullSummary = `Looks like the \`electron.d.ts\` file changed.\n\n\`\`\`\`\`\`diff\n${patch}\n\`\`\`\`\`\``;
     const tooBigSummary = `Looks like the \`electron.d.ts\` file changed, but the diff is too large to display here. See artifacts on the CircleCI build.`;
@@ -100,7 +101,7 @@ async function updateCheckFromArtifacts(
 async function runGHACheckOn(context: Context, headSha: string, checkUrl: string, jobId: number) {
   const started_at = new Date();
 
-  context.log.info('Starting GHA check run for:', headSha);
+  context.log.info(`Starting GHA check run for: ${headSha}`);
 
   const check = await createCheck(context, 'Artifact Comparison', headSha, checkUrl);
   const artifacts = await getGHAArtifacts(context, jobId);
