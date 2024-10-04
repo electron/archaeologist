@@ -1,6 +1,7 @@
+import * as path from 'node:path';
+import * as os from 'node:os';
+
 import * as fs from 'fs-extra';
-import * as path from 'path';
-import * as os from 'os';
 
 const tmpBase = path.resolve(os.tmpdir(), 'diffing');
 

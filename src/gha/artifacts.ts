@@ -1,9 +1,11 @@
-import { ArtifactsInfo } from '../types';
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import * as path from 'node:path';
 import { execSync } from 'node:child_process';
-import { withTempDir } from '../tmp';
+
 import { Context } from 'probot';
+
+import { ArtifactsInfo } from '../types';
+import { withTempDir } from '../tmp';
 
 const ARTIFACT_FILES = ['electron.new.d.ts', 'electron.old.d.ts', '.dig-old'];
 const wait = (milliseconds: number) => new Promise<void>((r) => setTimeout(r, milliseconds));

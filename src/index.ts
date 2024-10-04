@@ -1,7 +1,8 @@
+import * as cp from 'node:child_process';
+import * as path from 'node:path';
+
 import { ApplicationFunction, Context } from 'probot';
-import * as cp from 'child_process';
 import * as fs from 'fs-extra';
-import * as path from 'path';
 
 import { ArtifactsInfo } from './types';
 import { getGHAArtifacts } from './gha/artifacts';
