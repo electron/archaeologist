@@ -1,8 +1,8 @@
 import * as cp from 'node:child_process';
+import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
 import { ApplicationFunction, Context } from 'probot';
-import * as fs from 'fs-extra';
 
 import { ArtifactsInfo } from './types';
 import { getGHAArtifacts } from './gha/artifacts';
@@ -71,8 +71,8 @@ async function updateCheckFromArtifacts(
     const patch = await withTempDir(async (dir) => {
       const newPath = path.resolve(dir, 'electron.new.d.ts');
       const oldPath = path.resolve(dir, 'electron.old.d.ts');
-      await fs.writeFile(newPath, artifacts.new);
-      await fs.writeFile(oldPath, artifacts.old);
+      await fs.writeFile(newPath, artifacts.new!);
+      await fs.writeFile(oldPath, artifacts.old!);
       const diff = cp.spawnSync('git', ['diff', 'electron.old.d.ts', 'electron.new.d.ts'], {
         cwd: dir,
       });
