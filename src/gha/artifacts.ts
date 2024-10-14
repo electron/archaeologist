@@ -1,6 +1,7 @@
 import { readdir, readFile, writeFile } from 'node:fs/promises';
 import * as path from 'node:path';
 import { execSync } from 'node:child_process';
+import { setTimeout } from 'node:timers/promises';
 
 import { Context } from 'probot';
 
@@ -8,7 +9,6 @@ import { ArtifactsInfo } from '../types';
 import { withTempDir } from '../tmp';
 
 const ARTIFACT_FILES = ['electron.new.d.ts', 'electron.old.d.ts', '.dig-old'];
-const wait = (milliseconds: number) => new Promise<void>((r) => setTimeout(r, milliseconds));
 
 export async function getGHAArtifacts(
   context: Context,
@@ -41,7 +41,7 @@ export async function getGHAArtifacts(
       'backing off and retrying in a bit',
       `(${tryCount} more attempts)`,
     );
-    await wait(10000);
+    await setTimeout(10000);
     return getGHAArtifacts(context, jobId, tryCount - 1);
   }
 
@@ -56,7 +56,7 @@ export async function getGHAArtifacts(
       `failed to fetch artifacts for run: ${job.data.run_id}`,
       `backing off and retrying in a bit (${tryCount} more attempts)`,
     );
-    await wait(10000);
+    await setTimeout(10000);
     return getGHAArtifacts(context, jobId, tryCount - 1);
   }
 
