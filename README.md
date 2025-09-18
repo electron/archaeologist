@@ -2,9 +2,7 @@
 
 > Digging up and comparing your artifacts since 2018
 
-<img align="right" height="250px" src="./design/logo.jpg">
-
-## What does this do?
+<img height="124px" width="124px" align="right" alt="archeologist-logo" src="design/logo.png">
 
 This bot generates diffs for every PR to `electron/electron` for the generated
 `electron.d.ts` file so that reviewers checking docs changes can see easily
