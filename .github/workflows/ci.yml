@@ -1,12 +1,10 @@
-name: Lint
+name: Build / Test
 
 on:
   push:
     branches:
       - main
   pull_request:
-    branches:
-      - main
 
 permissions:
   contents: read
@@ -24,3 +22,5 @@ jobs:
       run: yarn install
     - name: Lint
       run: yarn lint
+    - name: Test
+      run: yarn test

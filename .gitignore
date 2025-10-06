@@ -1,7 +1,8 @@
 .env
 private.key*
 node_modules
-lib
+dist
 yarn-error.log
 .vscode
 .yarn/install-state.gz
+coverage
