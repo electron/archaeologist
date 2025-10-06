@@ -4,3 +4,4 @@ node_modules
 lib
 yarn-error.log
 .vscode
+.yarn/install-state.gz
