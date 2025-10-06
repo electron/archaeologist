@@ -5,8 +5,8 @@ import { setTimeout } from 'node:timers/promises';
 
 import { Context } from 'probot';
 
-import { ArtifactsInfo } from '../types';
-import { withTempDir } from '../tmp';
+import { ArtifactsInfo } from '../types.js';
+import { withTempDir } from '../tmp.js';
 
 const ARTIFACT_FILES = ['electron.new.d.ts', 'electron.old.d.ts', '.dig-old'];
 

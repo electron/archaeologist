@@ -4,12 +4,13 @@ import * as path from 'node:path';
 
 import { ApplicationFunction, Context } from 'probot';
 
-import { ArtifactsInfo } from './types';
-import { getGHAArtifacts } from './gha/artifacts';
-import { withTempDir } from './tmp';
+import { ArtifactsInfo } from './types.js';
+import { getGHAArtifacts } from './gha/artifacts.js';
+import { withTempDir } from './tmp.js';
 
 const ARCHAEOLOGIST_CHECK_NAME = process.env.ARCHAEOLOGIST_CHECK_NAME || 'Archaeologist Dig';
-const stripVersion = (dts: string) => dts.replace(/Type definitions for Electron .+?\n/g, '');
+export const stripVersion = (dts: string) =>
+  dts.replace(/Type definitions for Electron .+?\n/g, '');
 
 async function createCheck(
   context: Context,
@@ -17,7 +18,7 @@ async function createCheck(
   headSha: string,
   detailsUrl: string,
 ) {
-  return context.octokit.checks.create(
+  return context.octokit.rest.checks.create(
     context.repo({
       name: checkName,
       head_sha: headSha,
@@ -34,7 +35,7 @@ async function updateCheckFromArtifacts(
   checkId: number,
 ) {
   if (artifacts.missing.length > 0 || !artifacts.new || !artifacts.old || !artifacts.oldDigSpot) {
-    await context.octokit.checks.update(
+    await context.octokit.rest.checks.update(
       context.repo({
         check_run_id: checkId,
         conclusion: 'failure' as 'failure',
@@ -54,7 +55,7 @@ async function updateCheckFromArtifacts(
   artifacts.old = stripVersion(artifacts.old);
 
   if (artifacts.new === artifacts.old) {
-    await context.octokit.checks.update(
+    await context.octokit.rest.checks.update(
       context.repo({
         check_run_id: checkId,
         conclusion: 'success' as 'success',
@@ -84,7 +85,7 @@ async function updateCheckFromArtifacts(
     const fullSummary = `Looks like the \`electron.d.ts\` file changed.\n\n\`\`\`\`\`\`diff\n${patch}\n\`\`\`\`\`\``;
     const tooBigSummary = `Looks like the \`electron.d.ts\` file changed, but the diff is too large to display here. See artifacts on the CircleCI build.`;
 
-    await context.octokit.checks.update(
+    await context.octokit.rest.checks.update(
       context.repo({
         check_run_id: checkId,
         conclusion: 'neutral' as 'neutral',
@@ -121,4 +122,4 @@ const probotRunner: ApplicationFunction = (app) => {
   });
 };
 
-module.exports = probotRunner;
+export default probotRunner;
