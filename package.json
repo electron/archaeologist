@@ -21,5 +21,6 @@
     "lint": "prettier --check \"src/**/*.ts\"",
     "format": "prettier --write \"src/**/*.ts\"",
     "postinstall": "tsc"
-  }
+  },
+  "packageManager": "yarn@4.10.3"
 }
