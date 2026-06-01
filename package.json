@@ -17,7 +17,7 @@
     "@vitest/ui": "^4.0.17",
     "prettier": "^3.6.2",
     "typescript": "^5.9.2",
-    "vitest": "^4.0.17"
+    "vitest": "^4.1.0"
   },
   "scripts": {
     "build": "tsc",
