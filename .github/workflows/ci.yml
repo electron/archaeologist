@@ -20,6 +20,7 @@ jobs:
       uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.0.4
       with:
         node-version: lts/*
+        check-latest: true
     - name: Install
       run: yarn install
     - name: Build
